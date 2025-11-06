@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import "./LoginRegister.css";
@@ -30,6 +30,8 @@ export default function LoginRegister() {
     if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
     return age;
   };
+
+  const birthdayRef = useRef(null);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -88,91 +90,169 @@ export default function LoginRegister() {
           </h1>
         </header>
 
-        <main className="lr-box">
-          <form className="lr-form" onSubmit={handleSubmit}>
+        <main className={`lr-box ${isRegister ? "register-box" : ""}`}>
+          <form className={`lr-form ${isRegister ? "lr-register" : "lr-login"}`} onSubmit={handleSubmit}>
             {isRegister && (
-              <div className="lr-grid">
-                <input
-                  name="first_name"
-                  className="lr-input"
-                  placeholder="First Name"
-                  required
-                  onChange={handleChange}
-                />
-                <input
-                  name="middle_name"
-                  className="lr-input"
-                  placeholder="Middle Name"
-                  onChange={handleChange}
-                />
-                <input
-                  name="last_name"
-                  className="lr-input"
-                  placeholder="Last Name"
-                  required
-                  onChange={handleChange}
-                />
-                <input
-                  name="birthday"
-                  className="lr-input"
-                  type="date"
-                  onChange={handleChange}
-                />
-                <input
-                  name="contact_num"
-                  className="lr-input"
-                  placeholder="Contact Number"
-                  onChange={handleChange}
-                />
-                <input
-                  name="blood_type"
-                  className="lr-input"
-                  placeholder="Blood Type"
-                  onChange={handleChange}
-                />
-                <input
-                  name="contact_person"
-                  className="lr-input"
-                  placeholder="Contact Person"
-                  onChange={handleChange}
-                />
-                <input
-                  name="contact_person_rs"
-                  className="lr-input"
-                  placeholder="Relationship"
-                  onChange={handleChange}
-                />
-                <input
-                  name="contact_person_num"
-                  className="lr-input"
-                  placeholder="Contact Person Number"
-                  onChange={handleChange}
-                />
-                <input
-                  name="address"
-                  className="lr-input"
-                  placeholder="Address"
-                  onChange={handleChange}
-                />
+              <div className="register-grid">
+                {/* Row 1: first, middle, last */}
+                <div className="field">
+                  <label className="field-label" htmlFor="first_name">First Name</label>
+                  <input
+                    id="first_name"
+                    name="first_name"
+                    className="lr-input"
+                    placeholder="Juan"
+                    required
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="field">
+                  <label className="field-label" htmlFor="middle_name">Middle Name</label>
+                  <input
+                    id="middle_name"
+                    name="middle_name"
+                    className="lr-input"
+                    placeholder="Batumbakal"
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="field">
+                  <label className="field-label" htmlFor="last_name">Last Name</label>
+                  <input
+                    id="last_name"
+                    name="last_name"
+                    className="lr-input"
+                    placeholder="Dela Cruz"
+                    required
+                    onChange={handleChange}
+                  />
+                </div>
+
+                {/* Row 2: birthday, contact num, blood type */}
+                <div className="field">
+                  <label className="field-label" htmlFor="birthday">Date of Birth</label>
+                  <div className="date-wrapper">
+                    <input
+                      id="birthday"
+                      name="birthday"
+                      className="lr-input"
+                      type="date"
+                      onChange={handleChange}
+                      ref={birthdayRef}
+                    />
+                    <button
+                      type="button"
+                      className="date-icon"
+                      aria-label="Open date picker"
+                      onClick={() => {
+                        if (!birthdayRef.current) return;
+                        if (typeof birthdayRef.current.showPicker === "function") {
+                          birthdayRef.current.showPicker();
+                        } else {
+                          birthdayRef.current.focus();
+                        }
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                        <path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
+                        <path fill="currentColor" d="M7 11h5v5H7z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div className="field">
+                  <label className="field-label" htmlFor="contact_num">Contact Number</label>
+                  <input
+                    id="contact_num"
+                    name="contact_num"
+                    className="lr-input"
+                    placeholder="09123456789"
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="field">
+                  <label className="field-label" htmlFor="blood_type">Blood Type</label>
+                  <input
+                    id="blood_type"
+                    name="blood_type"
+                    className="lr-input"
+                    placeholder="AB+"
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="field fullwidth">
+                  <label className="field-label" htmlFor="address">Address</label>
+                  <textarea
+                    id="address"
+                    name="address"
+                    className="lr-input fullwidth lr-textarea"
+                    placeholder="Brgy. Uno, Lipa, Batangas"
+                    rows={3}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                {/* Row 4: contact person trio */}
+                <div className="field">
+                  <label className="field-label" htmlFor="contact_person">Contact Person</label>
+                  <input
+                    id="contact_person"
+                    name="contact_person"
+                    className="lr-input"
+                    placeholder="Pedro Dela Cruz"
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="field">
+                  <label className="field-label" htmlFor="contact_person_rs">Relationship</label>
+                  <input
+                    id="contact_person_rs"
+                    name="contact_person_rs"
+                    className="lr-input"
+                    placeholder="Father"
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="field">
+                  <label className="field-label" htmlFor="contact_person_num">Contact Person Number</label>
+                  <input
+                    id="contact_person_num"
+                    name="contact_person_num"
+                    className="lr-input"
+                    placeholder="09987654321"
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
             )}
 
-            <input
-              name="email"
-              type="email"
-              className="lr-input lr-pulse"
-              placeholder="E-mail"
-              required
-              onChange={handleChange}
-            />
-            <input
-              name="password"
-              type="password"
-              className="lr-input lr-pulse"
-              placeholder="Password"
-              required
-              onChange={handleChange}
-            />
+            <div className="center-inputs">
+              <div className="field">
+                <label className="field-label" htmlFor="email">Email</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  className="lr-input lr-pulse"
+                  placeholder="juandelacruz@gmail.com"
+                  required
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="field">
+                <label className="field-label" htmlFor="password">Password</label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  className="lr-input lr-pulse"
+                  placeholder=""
+                  required
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
 
             <button type="submit" className="lr-submit">
               {isRegister ? "Register" : "Login"}
