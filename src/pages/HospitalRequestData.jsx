@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useHealthcareStaff } from "../lib/hooks/useHealthcareStaff";
-import "../css/LoginRegister.css"; // reuse styles already present for inputs/buttons
+import "../css/HospitalUI.css";
+import requestPatientData from "../lib/hospitalFunctions";
+
 
 export default function HospitalRequestData() {
   const navigate = useNavigate();
@@ -10,6 +12,8 @@ export default function HospitalRequestData() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   // useHealthcareStaff handles authentication & staff lookup and redirects on unauthenticated users
   const { staffData, loading: staffLoading, error: staffError } = useHealthcareStaff();
 
@@ -59,6 +63,39 @@ export default function HospitalRequestData() {
   // simple helper to render full name
   const fullName = (p) => `${p.first_name || ""} ${p.middle_name || ""} ${p.last_name || ""}`.replace(/\s+/g, " ").trim();
 
+  // Request OTP/data for a patient using the currently-logged-in staff's hospital id
+  async function handleRequestData(patient) {
+    setError(null);
+    if (!patient || !patient.id) {
+      setError('No patient selected');
+      return;
+    }
+
+    // derive hospital_id and healthcare_staff_id from staffData (hook provides the staff row)
+    const hospital_id = staffData?.hospital_id || staffData?.hospitalId || staffData?.hospital?.id || null;
+    const healthcare_staff_id = staffData?.id || staffData?.healthcare_staff_id || staffData?.staff_id || null;
+
+    if (!hospital_id || !healthcare_staff_id) {
+      setError('Missing hospital or staff information for the logged-in user');
+      return;
+    }
+
+    setLoading(true);
+    const { data, error: hfError } = await requestPatientData({ hospital_id, patient_id: patient.id, healthcare_staff_id });
+    setLoading(false);
+
+    if (hfError) {
+      console.error("requestPatientData error", hfError);
+      setError(hfError.message || String(hfError));
+    } else {
+      // success — show a small toast message
+      setError(null);
+      setSuccessMessage("OTP request sent successfully");
+      // auto-dismiss
+      setTimeout(() => setSuccessMessage(null), 3500);
+    }
+  }
+
   // Show loading/authorization states from the hook
   if (staffLoading) {
     return (
@@ -98,6 +135,25 @@ export default function HospitalRequestData() {
 
   return (
     <div className="lr-page">
+      {/* small success toast */}
+      {successMessage && (
+        <div
+          style={{
+            position: "fixed",
+            top: 18,
+            right: 18,
+            background: "#1f8e4a",
+            color: "white",
+            padding: "10px 14px",
+            borderRadius: 8,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+            zIndex: 1400,
+            fontSize: 14,
+          }}
+        >
+          {successMessage}
+        </div>
+      )}
       <div className="lr-inner">
         <header className="lr-logo" aria-hidden>
           <h1>
@@ -130,44 +186,65 @@ export default function HospitalRequestData() {
             {loading && <p>Searching…</p>}
             {error && <p style={{ color: "#b00" }}>{error}</p>}
 
-            <div style={{ overflowX: "auto", marginTop: 8 }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>
-                    <th style={{ padding: 8 }}>Name</th>
-                    <th style={{ padding: 8 }}>DOB</th>
-                    <th style={{ padding: 8 }}>Age</th>
-                    <th style={{ padding: 8 }}>Email</th>
-                    <th style={{ padding: 8 }}>Contact</th>
-                    <th style={{ padding: 8 }}>Blood</th>
-                    <th style={{ padding: 8 }}>Address</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {results.map((p) => (
-                    <tr key={p.id} style={{ borderBottom: "1px solid #f0f0f0" }}>
-                      <td style={{ padding: 8 }}>{fullName(p)}</td>
-                      <td style={{ padding: 8 }}>{p.birthday || "—"}</td>
-                      <td style={{ padding: 8 }}>{p.age ?? "—"}</td>
-                      <td style={{ padding: 8 }}>{p.email}</td>
-                      <td style={{ padding: 8 }}>{p.contact_num}</td>
-                      <td style={{ padding: 8 }}>{p.blood_type}</td>
-                      <td style={{ padding: 8 }}>{p.address}</td>
-                    </tr>
-                  ))}
-                  {results.length === 0 && !loading && (
-                    <tr>
-                      <td colSpan={7} style={{ padding: 12, textAlign: "center", color: "#666" }}>
-                        No results
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+            <div style={{ marginTop: 8 }}>
+              <div className="patient-grid">
+                {results.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className="patient-card"
+                    onClick={() => setSelectedPatient(p)}
+                    title={`Open ${fullName(p)}`}
+                  >
+                    <h3 style={{ margin: 0, marginBottom: 6 }}>{fullName(p)}</h3>
+                    <p style={{ margin: 0, color: "#666" }}>Age: {p.age ?? "—"}</p>
+                    <p style={{ marginTop: 8, color: "#234" }}>{p.email}</p>
+                  </button>
+                ))}
+              </div>
+
+              {results.length === 0 && !loading && (
+                <div style={{ padding: 12, textAlign: "center", color: "#666" }}>No results</div>
+              )}
             </div>
           </div>
         </main>
       </div>
+      {/* Patient detail modal */}
+      {selectedPatient && (
+        <div
+          className="hr-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setSelectedPatient(null)}
+        >
+          <div className="hr-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="hr-modal-close" aria-label="Close" onClick={() => setSelectedPatient(null)}>×</button>
+            <h2 style={{ marginTop: 0 }}>{fullName(selectedPatient)}</h2>
+            <p><strong>Age:</strong> {selectedPatient.age ?? '—'}</p>
+            <p><strong>Date of Birth:</strong> {selectedPatient.birthday ?? '—'}</p>
+            <p><strong>Email:</strong> {selectedPatient.email ?? '—'}</p>
+            <p><strong>Contact:</strong> {selectedPatient.contact_num ?? '—'}</p>
+            <p><strong>Blood Type:</strong> {selectedPatient.blood_type ?? '—'}</p>
+            <p style={{ marginBottom: 12 }}><strong>Address:</strong> {selectedPatient.address ?? '—'}</p>
+
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="lr-submit"
+                onClick={async () => {
+                  // use the logged-in staff data to derive hospital & staff ids
+                  await handleRequestData(selectedPatient);
+                  // close modal regardless (or change this to after success if preferred)
+                  setSelectedPatient(null);
+                }}
+              >
+                Request Data
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

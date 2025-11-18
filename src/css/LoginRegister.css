@@ -364,3 +364,39 @@ button {
   font-family: inherit;
 }
 
+/* Patient card grid for hospital search results */
+.patient-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.patient-card {
+  text-align: left;
+  background: #fff;
+  border: 1px solid rgba(34,60,52,0.06);
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 6px 16px rgba(36,60,50,0.04);
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  width: 100%;
+}
+
+.patient-card:hover,
+.patient-card:focus {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(36,60,50,0.08);
+}
+
+.patient-card h3 {
+  font-size: 16px;
+}
+
+.patient-card p {
+  font-size: 13px;
+  margin: 0;
+}
+
+/* hospital UI styles were moved to src/css/HospitalUI.css */
+

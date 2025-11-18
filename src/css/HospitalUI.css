@@ -1,0 +1,87 @@
+/* Hospital UI specific styles (patient search results) */
+:root {
+	--hospital-card-bg: #fff;
+	--hospital-card-border: rgba(34,60,52,0.06);
+}
+
+.patient-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 12px;
+}
+
+.patient-card {
+	text-align: left;
+	background: var(--hospital-card-bg);
+	/* ensure text is readable even if a global color (e.g. white) is set */
+	color: #111;
+	border: 1px solid var(--hospital-card-border);
+	border-radius: 10px;
+	padding: 12px;
+	box-shadow: 0 6px 16px rgba(36,60,50,0.04);
+	cursor: pointer;
+	transition: transform 120ms ease, box-shadow 120ms ease;
+	width: 100%;
+}
+
+.patient-card:hover,
+.patient-card:focus {
+	transform: translateY(-4px);
+	box-shadow: 0 12px 30px rgba(36,60,50,0.08);
+}
+
+.patient-card h3 {
+	font-size: 16px;
+}
+
+.patient-card p {
+	font-size: 13px;
+	margin: 0;
+}
+
+/* Patient detail modal */
+.hr-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0,0,0,0.4);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1200;
+}
+
+.hr-modal {
+	background: #fff;
+	border-radius: 12px;
+	padding: 20px 20px 18px 20px;
+	max-width: 720px;
+	width: 96%;
+	box-shadow: 0 20px 60px rgba(10,20,16,0.18);
+	position: relative;
+	/* ensure modal text is dark regardless of global color settings */
+	color: #111;
+}
+
+.hr-modal-close {
+	position: absolute;
+	right: 10px;
+	top: 8px;
+	border: none;
+	background: transparent;
+	font-size: 22px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.hr-modal h2 {
+	margin-top: 0;
+}
+
+/* Modal action button (uses lr-submit style but adjust spacing) */
+.hr-modal .lr-submit {
+	margin: 0;
+	width: auto;
+	padding: 8px 14px;
+	border-radius: 8px;
+}
+
