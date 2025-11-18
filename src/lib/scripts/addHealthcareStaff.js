@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { createClient } from '@supabase/supabase-js'
 
-// 🔒 Replace with your actual Supabase credentials
+// Replace with your actual Supabase credentials
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 
@@ -27,7 +27,7 @@ async function addHealthcareStaff({
   })
 
   if (userError) {
-    console.error('Error creating auth user:', userError.message)
+    console.error(`Error creating auth user:`, userError.message)
     return
   }
 
@@ -51,11 +51,11 @@ async function addHealthcareStaff({
     ])
 
   if (dbError) {
-    console.error('❌ Error inserting into healthcare_staff_tbl:', dbError.message)
+    console.error(`Error inserting into healthcare_staff_tbl:`, dbError.message)
     return
   }
 
-  console.log(`✅ Added ${first_name} ${last_name} to healthcare_staff_tbl`)
+  console.log(`Added ${first_name} ${last_name} to healthcare_staff_tbl`)
 }
 
 // replace with new staff data
@@ -69,3 +69,5 @@ addHealthcareStaff({
   occupation: '',
   role: '',
 })
+
+// node ./src/lib/scripts/addHealthcareStaff.js

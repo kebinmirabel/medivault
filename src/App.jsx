@@ -4,6 +4,7 @@ import LoginRegister from './pages/LoginRegister'
 import Dashboard from './pages/Dashboard'
 import HospitalLogin from './pages/HospitalLogin'
 import HospitalDashboard from './pages/HospitalDashboard'
+import HospitalRequestData from './pages/HospitalRequestData'
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/hospital-login" element={<HospitalLogin />} />
       <Route path="/hospital-dashboard" element={<HospitalDashboard />} />
+      <Route path="/hospital-request-data" element={<HospitalRequestData />} />
     </Routes>
   )
 }
