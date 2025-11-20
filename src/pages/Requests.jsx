@@ -21,15 +21,20 @@ export default function Requests() {
 
       const { data, error: fetchError } = await supabase
         .from("otp")
-        .select(`
+        .select(
+          `
           *,
           patient:patient_id (first_name, last_name),
           healthcare_staff:healthcare_staff_id (first_name, last_name),
           hospital:hospital_id (name)
-        `)
+        `
+        )
         .order("created_at", { ascending: false });
 
       if (fetchError) throw fetchError;
+
+      // Debug: log raw data to check hospital reference
+      console.log("Raw OTP data:", data);
 
       // Transform the data to match the card display format
       const transformed = (data || []).map((item) => ({
@@ -163,6 +168,9 @@ export default function Requests() {
 
                       <div className="req-body">
                         <div className="req-note">{r.note}</div>
+                        {r.staffName && r.staffName !== "Unknown Staff" && (
+                          <div className="req-staff">Staff: {r.staffName}</div>
+                        )}
                         <div className="req-expand">
                           {expanded ? "Click to collapse" : "Click to expand"}
                         </div>
