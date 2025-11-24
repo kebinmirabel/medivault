@@ -12,6 +12,7 @@ export default function HospitalRequestData() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [otpError, setOtpError] = useState(null);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [otpInput, setOtpInput] = useState("");
@@ -100,20 +101,21 @@ export default function HospitalRequestData() {
 
   async function handleVerifyOtp() {
     if (!otpInput || otpInput.trim().length === 0) {
-      setError("Please enter an OTP");
+      setOtpError("Please enter an OTP");
       return;
     }
 
     setOtpLoading(true);
-    setError(null);
+    setOtpError(null);
     const { data, error: verifyError } = await verifyOtp(otpInput.trim());
     setOtpLoading(false);
 
     if (verifyError) {
-      setError(verifyError.message || "OTP verification failed");
+      setOtpError(verifyError.message || "OTP verification failed");
     } else {
       setSuccessMessage("OTP verified successfully");
       setOtpInput("");
+      setOtpError(null);
       setTimeout(() => setSuccessMessage(null), 3500);
     }
   }
@@ -189,6 +191,9 @@ export default function HospitalRequestData() {
         >
           {otpLoading ? "Verifying..." : "Verify"}
         </button>
+        {otpError && (
+          <div className="otp-sidebar-error">{otpError}</div>
+        )}
       </div>
 
       <div className="lr-page page-container">
