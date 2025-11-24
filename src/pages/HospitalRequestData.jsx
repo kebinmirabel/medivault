@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useHealthcareStaff } from "../lib/hooks/useHealthcareStaff";
 import "../css/HospitalUI.css";
-import requestPatientData from "../lib/hospitalFunctions";
+import requestPatientData, { verifyOtp } from "../lib/hospitalFunctions";
 
 
 export default function HospitalRequestData() {
@@ -14,6 +14,8 @@ export default function HospitalRequestData() {
   const [error, setError] = useState(null);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [otpInput, setOtpInput] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
   // useHealthcareStaff handles authentication & staff lookup and redirects on unauthenticated users
   const { staffData, loading: staffLoading, error: staffError } = useHealthcareStaff();
 
@@ -96,6 +98,26 @@ export default function HospitalRequestData() {
     }
   }
 
+  async function handleVerifyOtp() {
+    if (!otpInput || otpInput.trim().length === 0) {
+      setError("Please enter an OTP");
+      return;
+    }
+
+    setOtpLoading(true);
+    setError(null);
+    const { data, error: verifyError } = await verifyOtp(otpInput.trim());
+    setOtpLoading(false);
+
+    if (verifyError) {
+      setError(verifyError.message || "OTP verification failed");
+    } else {
+      setSuccessMessage("OTP verified successfully");
+      setOtpInput("");
+      setTimeout(() => setSuccessMessage(null), 3500);
+    }
+  }
+
   // Show loading/authorization states from the hook
   if (staffLoading) {
     return (
@@ -134,43 +156,55 @@ export default function HospitalRequestData() {
   }
 
   return (
-    <div className="lr-page">
-      {/* small success toast */}
-      {successMessage && (
-        <div
-          style={{
-            position: "fixed",
-            top: 18,
-            right: 18,
-            background: "#1f8e4a",
-            color: "white",
-            padding: "10px 14px",
-            borderRadius: 8,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-            zIndex: 1400,
-            fontSize: 14,
-          }}
-        >
-          {successMessage}
+    <>
+      <nav className="hospital-nav">
+        <div className="nav-brand">
+          <h2>
+            <span className="medi">Medi</span>
+            <span className="vault">Vault</span>
+          </h2>
         </div>
-      )}
+
+        <div className="nav-actions">
+          <button type="button" className="nav-btn">Request Data</button>
+          <button type="button" className="nav-btn">Accepted Requests</button>
+          <div className="nav-avatar">M</div>
+        </div>
+      </nav>
+
+      {/* OTP Box - Fixed on left edge */}
+      <div className="otp-sidebar">
+        <h4>Enter OTP</h4>
+        <input
+          type="text"
+          placeholder="6-digit OTP"
+          className="otp-sidebar-input"
+          value={otpInput}
+          onChange={(e) => setOtpInput(e.target.value)}
+        />
+        <button 
+          className="otp-sidebar-btn"
+          onClick={handleVerifyOtp}
+          disabled={otpLoading}
+        >
+          {otpLoading ? "Verifying..." : "Verify"}
+        </button>
+      </div>
+
+      <div className="lr-page page-container">
+      {/* small success toast */}
+      {successMessage && <div className="toast-success">{successMessage}</div>}
       <div className="lr-inner">
-        <header className="lr-logo" aria-hidden>
-          <h1>
-            <span className="logo-medi">Medi</span>
-            <span className="logo-vault">Vault</span>
-          </h1>
-        </header>
+        <h3>Request Patient Data</h3>
 
         <main className="lr-box">
           <div style={{ width: "100%" }}>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
+            <div className="search-row">
               <input
                 value={term}
                 onChange={(e) => setTerm(e.target.value)}
                 placeholder="Search by name, email or contact (min 2 chars)"
-                className="lr-input"
-                style={{ maxWidth: 520 }}
+                className="lr-input search-input"
               />
               <button
                 className="lr-submit"
@@ -246,5 +280,6 @@ export default function HospitalRequestData() {
         </div>
       )}
     </div>
+    </>
   );
 }
