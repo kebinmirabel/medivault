@@ -4,8 +4,6 @@ import { supabase } from "../lib/supabaseClient";
 
 export default function Requests() {
   const [openId, setOpenId] = useState(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeNav, setActiveNav] = useState("Requests");
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -78,56 +76,15 @@ export default function Requests() {
   };
 
   return (
-    <div className={"app-shell" + (sidebarCollapsed ? " collapsed" : "")}>
+    <div className="app-shell">
       <header className="topbar">
         <div className="topbar-left">
-          <button
-            className="hamburger-btn"
-            aria-label={
-              sidebarCollapsed ? "Expand navigation" : "Collapse navigation"
-            }
-            onClick={() => setSidebarCollapsed((s) => !s)}
-          >
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
           <div className="brand">MediVault</div>
         </div>
         <div className="topbar-right">M</div>
       </header>
 
       <div className="shell-body">
-        <aside className="sidebar" aria-expanded={!sidebarCollapsed}>
-          <nav className="side-nav">
-            <ul>
-              <li
-                className={activeNav === "Requests" ? "active" : ""}
-                onClick={() => setActiveNav("Requests")}
-                title="Requests"
-              >
-                <span className="label">Requests</span>
-              </li>
-              <li
-                className={activeNav === "Dashboard" ? "active" : ""}
-                onClick={() => setActiveNav("Dashboard")}
-                title="Dashboard"
-              >
-                <span className="label">Dashboard</span>
-              </li>
-              <li
-                className={activeNav === "Profile" ? "active" : ""}
-                onClick={() => setActiveNav("Profile")}
-                title="Profile"
-              >
-                <span className="label">Profile</span>
-              </li>
-            </ul>
-          </nav>
-
-          {/* footer collapse removed; toggle is now the top-left hamburger */}
-        </aside>
-
         <main className="content">
           <header className="requests-header">
             <h2>Requests</h2>
@@ -167,10 +124,14 @@ export default function Requests() {
                       </div>
 
                       <div className="req-body">
-                        <div className="req-note">{r.note}</div>
-                        {r.staffName && r.staffName !== "Unknown Staff" && (
-                          <div className="req-staff">Staff: {r.staffName}</div>
-                        )}
+                        <div className="req-body-left">
+                          <div className="req-note">{r.note}</div>
+                          {r.staffName && r.staffName !== "Unknown Staff" && (
+                            <div className="req-staff">
+                              Staff: {r.staffName}
+                            </div>
+                          )}
+                        </div>
                         <div className="req-expand">
                           {expanded ? "Click to collapse" : "Click to expand"}
                         </div>
