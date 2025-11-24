@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import "./MedicalHistory.css";
+import "../css/MedicalHistory.css";
 import { supabase } from "../lib/supabaseClient";
 
 export default function MedicalHistory() {
