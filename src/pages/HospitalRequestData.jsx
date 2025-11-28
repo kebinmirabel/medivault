@@ -17,6 +17,9 @@ export default function HospitalRequestData() {
   const [otpInput, setOtpInput] = useState("");
   const [otpLoading, setOtpLoading] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+  const [emergencyReason, setEmergencyReason] = useState("");
+  const [isEmergencyLoading, setIsEmergencyLoading] = useState(false);
   // useHealthcareStaff handles authentication & staff lookup and redirects on unauthenticated users
   const {
     staffData,
@@ -148,6 +151,71 @@ export default function HospitalRequestData() {
 
   const toggleDropdown = () => {
     setDropdownOpen((prev) => !prev);
+  };
+
+  // Check if current staff has Level 3 role (emergency override access)
+  const isLevel3Staff = staffData?.role === 3;
+
+  // Emergency Override Function
+  const handleEmergencyOverride = async () => {
+    if (!selectedPatient || !emergencyReason.trim()) {
+      alert("Please provide a detailed reason for the emergency override.");
+      return;
+    }
+
+    if (emergencyReason.length < 20) {
+      alert("Emergency reason must be at least 20 characters long.");
+      return;
+    }
+
+    setIsEmergencyLoading(true);
+
+    try {
+      // Log the emergency override in audit_logs table
+      const { error: logError } = await supabase.from("audit_logs").insert({
+        patient_id: selectedPatient.id,
+        hospital_id:
+          staffData?.hospital_id ||
+          staffData?.hospitalId ||
+          staffData?.hospital?.id,
+        healthcare_staff_id: staffData?.id,
+        action: `EMERGENCY_OVERRIDE: ${emergencyReason}`,
+      });
+
+      if (logError) throw logError;
+
+      // Insert into accepted_requests table to record the emergency access
+      const { error: acceptedError } = await supabase
+        .from("accepted_requests")
+        .insert({
+          patient_id: selectedPatient.id,
+          hospital_id:
+            staffData?.hospital_id ||
+            staffData?.hospitalId ||
+            staffData?.hospital?.id,
+          healthcare_staff_id: staffData?.id,
+        });
+
+      if (acceptedError) throw acceptedError;
+
+      // Show success message
+      setSuccessMessage(
+        `Emergency override logged successfully for ${selectedPatient.first_name} ${selectedPatient.last_name}. Access granted for medical emergency.`
+      );
+
+      // Close modals and reset state
+      setShowEmergencyModal(false);
+      setSelectedPatient(null);
+      setEmergencyReason("");
+
+      // Auto-dismiss success message
+      setTimeout(() => setSuccessMessage(null), 5000);
+    } catch (error) {
+      console.error("Emergency override error:", error);
+      alert("Failed to process emergency override. Please try again.");
+    } finally {
+      setIsEmergencyLoading(false);
+    }
   };
 
   // Close dropdown when clicking outside
@@ -425,6 +493,127 @@ export default function HospitalRequestData() {
                   }}
                 >
                   Request Data
+                </button>
+                {isLevel3Staff && (
+                  <button
+                    type="button"
+                    className="emergency-override-btn"
+                    onClick={() => {
+                      setShowEmergencyModal(true);
+                    }}
+                    title="Emergency Override - Level 3 Staff Only"
+                  >
+                    🚨 Emergency Access
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Emergency Override Modal */}
+        {showEmergencyModal && selectedPatient && (
+          <div className="modal-overlay">
+            <div className="emergency-modal">
+              <div className="modal-header">
+                <h3>⚠️ EMERGENCY OVERRIDE - LEVEL 3</h3>
+                <button
+                  className="close-btn"
+                  onClick={() => {
+                    setShowEmergencyModal(false);
+                    setEmergencyReason("");
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="modal-body">
+                <div className="warning-message">
+                  <p>
+                    <strong>⚠️ CRITICAL WARNING:</strong> This emergency
+                    override will be permanently logged in the audit system.
+                  </p>
+                  <p>
+                    <strong>Use only in genuine medical emergencies</strong>{" "}
+                    when patient cannot provide OTP and immediate access to
+                    medical records is required to save life or prevent serious
+                    harm.
+                  </p>
+                </div>
+
+                <div className="patient-info">
+                  <h4>Emergency Access Details:</h4>
+                  <p>
+                    <strong>Patient:</strong> {selectedPatient?.first_name}{" "}
+                    {selectedPatient?.last_name}
+                  </p>
+                  <p>
+                    <strong>DOB:</strong>{" "}
+                    {selectedPatient?.birthday || "Not available"}
+                  </p>
+                  <p>
+                    <strong>Staff:</strong> {staffData?.first_name}{" "}
+                    {staffData?.last_name} (Level 3 Authority)
+                  </p>
+                  <p>
+                    <strong>Hospital:</strong>{" "}
+                    {staffData?.hospital?.name || "Unknown"}
+                  </p>
+                  <p>
+                    <strong>Time:</strong> {new Date().toLocaleString()}
+                  </p>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="emergencyReason">
+                    <strong>Medical Emergency Justification (Required):</strong>
+                  </label>
+                  <textarea
+                    id="emergencyReason"
+                    value={emergencyReason}
+                    onChange={(e) => setEmergencyReason(e.target.value)}
+                    placeholder="Describe the specific medical emergency that requires immediate access to this patient's records (e.g., 'Patient unconscious in ER, suspected drug allergy, requires immediate medical history for treatment')"
+                    rows={5}
+                    required
+                  />
+                  <small>
+                    This reason will be permanently recorded in the audit log
+                    and may be subject to medical board review.
+                  </small>
+                </div>
+
+                <div className="confirmation-checkbox">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={emergencyReason.length >= 20}
+                      readOnly
+                    />
+                    I confirm this is a genuine medical emergency requiring
+                    immediate patient record access
+                  </label>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  className="cancel-btn"
+                  onClick={() => {
+                    setShowEmergencyModal(false);
+                    setEmergencyReason("");
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="confirm-emergency-btn"
+                  onClick={handleEmergencyOverride}
+                  disabled={isEmergencyLoading || emergencyReason.length < 20}
+                >
+                  {isEmergencyLoading
+                    ? "LOGGING OVERRIDE..."
+                    : "CONFIRM EMERGENCY ACCESS"}
                 </button>
               </div>
             </div>
