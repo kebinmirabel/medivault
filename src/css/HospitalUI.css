@@ -531,16 +531,18 @@ textarea.form-input {
 
 .patient-detail-back-btn {
 	background: transparent;
-	border: 1px solid #ccc;
+	color: gray;
 	padding: 8px 16px;
 	border-radius: 8px;
 	margin-bottom: 16px;
 	cursor: pointer;
 	font-size: 14px;
+	transition: all 0.2s ease;
 }
 
 .patient-detail-back-btn:hover {
 	background: #f5f5f5;
+	border: none;
 }
 
 .patient-info-header {

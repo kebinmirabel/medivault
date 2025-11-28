@@ -124,3 +124,131 @@ export async function verifyOtp(otp) {
 
 export default requestPatientData;
 
+// Fetch patient data and history
+export async function fetchPatientData(patient_id) {
+	try {
+		// Fetch patient basic info
+		const { data: patientData, error: patientError } = await supabase
+			.from("patient_tbl")
+			.select("*")
+			.eq('id', patient_id)
+			.single();
+
+		if (patientError) throw patientError;
+
+		// Fetch patient medical history
+		const { data: historyData, error: historyError } = await supabase
+			.from("patient_records_tbl")
+			.select("*")
+			.eq('patient_id', patient_id)
+			.order('created_at', { ascending: false });
+
+		if (historyError) throw historyError;
+
+		// Get unique hospital IDs from history
+		const hospitalIds = [...new Set(historyData.map(record => record.hospital_id).filter(Boolean))];
+
+		// Fetch hospital names
+		let hospitalData = {};
+		if (hospitalIds.length > 0) {
+			const { data: hospitals, error: hospitalError } = await supabase
+				.from("hospital_tbl")
+				.select("id, name")
+				.in('id', hospitalIds);
+
+			if (!hospitalError) {
+				hospitalData = hospitals.reduce((acc, hospital) => {
+					acc[hospital.id] = hospital.name;
+					return acc;
+				}, {});
+			}
+		}
+
+		return {
+			patient: patientData,
+			history: historyData || [],
+			hospitals: hospitalData
+		};
+	} catch (err) {
+		console.error("Error fetching patient data:", err);
+		throw new Error(err.message || "Failed to load patient data");
+	}
+}
+
+// Fetch doctors from doctor_tbl
+export async function fetchDoctors() {
+	try {
+		const { data: doctorData, error: doctorError } = await supabase
+			.from('doctor_tbl')
+			.select('id, first_name, last_name')
+			.order('first_name');
+
+		if (doctorError) {
+			console.error('Error fetching doctors:', doctorError);
+			throw doctorError;
+		}
+
+		return doctorData || [];
+	} catch (error) {
+		console.error('Error in fetchDoctors:', error);
+		throw error;
+	}
+}
+
+// Create new medical record
+export async function createMedicalRecord(recordData) {
+	try {
+		const { data, error: insertError } = await supabase
+			.from('patient_records_tbl')
+			.insert([recordData])
+			.select();
+
+		if (insertError) {
+			throw insertError;
+		}
+
+		return data;
+	} catch (error) {
+		console.error('Error creating record:', error);
+		throw error;
+	}
+}
+
+// Update existing medical record
+export async function updateMedicalRecord(recordId, updateData) {
+	try {
+		const { error } = await supabase
+			.from('patient_records_tbl')
+			.update(updateData)
+			.eq('id', recordId);
+
+		if (error) {
+			throw error;
+		}
+
+		return true;
+	} catch (error) {
+		console.error('Error updating record:', error);
+		throw error;
+	}
+}
+
+// Delete medical record
+export async function deleteMedicalRecord(recordId) {
+	try {
+		const { error } = await supabase
+			.from('patient_records_tbl')
+			.delete()
+			.eq('id', recordId);
+
+		if (error) {
+			throw error;
+		}
+
+		return true;
+	} catch (error) {
+		console.error('Error deleting record:', error);
+		throw error;
+	}
+}
+
