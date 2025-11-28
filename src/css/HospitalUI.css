@@ -104,38 +104,252 @@ body {
 .hr-modal-overlay {
 	position: fixed;
 	inset: 0;
-	background: rgba(0,0,0,0.4);
+	background: rgba(0,0,0,0.5);
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	z-index: 1200;
+	backdrop-filter: blur(2px);
 }
 
 .hr-modal {
-	background: #fff;
-	border-radius: 12px;
-	padding: 20px 20px 18px 20px;
-	max-width: 720px;
-	width: 96%;
-	box-shadow: 0 20px 60px rgba(10,20,16,0.18);
+	background: #ffffff;
+	border-radius: 16px;
+	padding: 32px;
+	max-width: 700px;
+	width: 90%;
+	max-height: 90vh;
+	overflow-y: auto;
+	box-shadow: 0 25px 50px rgba(0,0,0,0.15);
 	position: relative;
-	/* ensure modal text is dark regardless of global color settings */
-	color: #111;
+	color: #1a1a1a;
+	animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+	from {
+		opacity: 0;
+		transform: translateY(-20px) scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
 }
 
 .hr-modal-close {
 	position: absolute;
-	right: 10px;
-	top: 8px;
+	right: 16px;
+	top: 16px;
 	border: none;
-	background: transparent;
-	font-size: 22px;
+	background: #f1f5f9;
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	font-size: 18px;
 	line-height: 1;
 	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #64748b;
+	transition: all 0.2s ease;
+}
+
+.hr-modal-close:hover {
+	background: #e2e8f0;
+	color: #334155;
 }
 
 .hr-modal h2 {
-	margin-top: 0;
+	margin: 0 0 24px 0;
+	font-size: 24px;
+	font-weight: 600;
+	color: #1e293b;
+	padding-right: 40px;
+}
+
+/* Modal form styles */
+.form-group {
+	margin-bottom: 20px;
+}
+
+.form-group label {
+	display: block;
+	margin-bottom: 6px;
+	font-weight: 600;
+	color: #374151;
+	font-size: 14px;
+}
+
+.form-input {
+	width: 100%;
+	padding: 12px 16px;
+	border: 2px solid #e5e7eb;
+	border-radius: 10px;
+	font-size: 14px;
+	box-sizing: border-box;
+	transition: all 0.2s ease;
+	background: #ffffff;
+	color: #1f2937;
+}
+
+.form-input:focus {
+	outline: none;
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+	background: #ffffff;
+}
+
+.form-input.readonly {
+	background: #f9fafb;
+	color: #6b7280;
+	cursor: not-allowed;
+	border-color: #d1d5db;
+}
+
+.form-input::placeholder {
+	color: #9ca3af;
+}
+
+/* Two-column form layout */
+.form-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+	margin-bottom: 20px;
+}
+
+/* Textarea specific styling */
+textarea.form-input {
+	resize: vertical;
+	min-height: 80px;
+	font-family: inherit;
+	line-height: 1.5;
+}
+
+/* Doctor search dropdown */
+.doctor-search-container {
+	position: relative;
+}
+
+.doctor-dropdown {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	background: #ffffff;
+	border: 2px solid #e5e7eb;
+	border-top: none;
+	border-radius: 0 0 10px 10px;
+	max-height: 200px;
+	overflow-y: auto;
+	z-index: 100;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.doctor-option {
+	padding: 12px 16px;
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+	border-bottom: 1px solid #f3f4f6;
+}
+
+.doctor-option:last-child {
+	border-bottom: none;
+}
+
+.doctor-option:hover {
+	background: #f8fafc;
+}
+
+.doctor-search-container .form-input:focus + .doctor-dropdown,
+.doctor-search-container .form-input:focus {
+	border-color: #3b82f6;
+}
+
+/* Form actions */
+.form-actions {
+	display: flex;
+	gap: 12px;
+	justify-content: flex-end;
+	margin-top: 32px;
+	padding-top: 24px;
+	border-top: 1px solid #e5e7eb;
+}
+
+.btn-cancel {
+	padding: 12px 24px;
+	border: 2px solid #d1d5db;
+	border-radius: 10px;
+	background: #ffffff;
+	color: #6b7280;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 500;
+	transition: all 0.2s ease;
+}
+
+.btn-cancel:hover:not(:disabled) {
+	background: #f9fafb;
+	border-color: #9ca3af;
+	color: #374151;
+}
+
+.btn-cancel:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.btn-submit {
+	padding: 12px 24px;
+	border: none;
+	border-radius: 10px;
+	background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+	color: white;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 500;
+	transition: all 0.2s ease;
+	box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.btn-submit:hover:not(:disabled) {
+	background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+	box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+	transform: translateY(-1px);
+}
+
+.btn-submit:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+	transform: none;
+	box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+	.hr-modal {
+		width: 95%;
+		padding: 24px;
+		margin: 16px;
+	}
+	
+	.form-row {
+		grid-template-columns: 1fr;
+		gap: 12px;
+	}
+	
+	.form-actions {
+		flex-direction: column-reverse;
+		gap: 8px;
+	}
+	
+	.btn-cancel,
+	.btn-submit {
+		width: 100%;
+		justify-content: center;
+	}
 }
 
 /* Modal action button (uses lr-submit style but adjust spacing) */
@@ -305,3 +519,215 @@ body {
 	}
 }
 
+/* Patient Detail Page Styles */
+.patient-detail-container {
+	padding-top: 80px;
+	padding-left: 15%;
+	padding-right: 15%;
+	padding-bottom: 40px;
+	min-height: 100vh;
+	/* overflow-y: auto; */
+}
+
+.patient-detail-back-btn {
+	background: transparent;
+	border: 1px solid #ccc;
+	padding: 8px 16px;
+	border-radius: 8px;
+	margin-bottom: 16px;
+	cursor: pointer;
+	font-size: 14px;
+}
+
+.patient-detail-back-btn:hover {
+	background: #f5f5f5;
+}
+
+.patient-info-header {
+	background: #fff;
+	border-radius: 12px;
+	padding: 20px;
+	margin-bottom: 24px;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.patient-info-header h2 {
+	margin: 0 0 16px 0;
+	color: #3f5688;
+}
+
+.patient-vitals-grid {
+	display: flex;
+	gap: 40px;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.patient-vital-item p {
+	margin: 4px 0;
+	font-size: 16px;
+}
+
+.medical-history-section {
+	margin-bottom: 290px;
+	background-color: #3f5688;
+	padding: 20px;
+	border-radius: 12px;
+}
+
+.medical-history-title {
+	color: #eeeeee;
+	font-size: 1.5rem;
+	margin: 0;
+}
+
+.medical-history-container {
+	height: calc(100vh - 425px);
+	overflow-y: auto;
+	padding-right: 8px;
+	box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+	border-radius: 12px;
+}
+
+.medical-history-list {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	background-color: #eeeeee;
+	border-radius: 12px;
+}
+
+.medical-record-card {
+	background: #fff;
+	border-radius: 12px;
+	padding: 20px;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+	border: 1px solid #e0e0e0;
+	/* margin-bottom: 16px; */
+}
+
+.medical-record-content {
+	display: grid;
+	grid-template-columns: 2fr 1fr 1fr;
+	gap: 24px;
+	align-items: flex-start;
+}
+
+.medical-record-col1 {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.medical-record-transaction {
+	margin: 0;
+	font-size: 18px;
+	font-weight: bold;
+	color: #3f5688;
+	margin-bottom: 4px;
+}
+
+.medical-record-field {
+	margin: 0;
+	font-size: 14px;
+	line-height: 1.4;
+}
+
+.medical-record-col2 {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.medical-record-col3 {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	align-items: flex-end;
+}
+
+.medical-record-meta {
+	text-align: right;
+}
+
+.medical-record-date {
+	margin: 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: #2563eb;
+}
+
+.medical-record-hospital {
+	margin: 0;
+	font-size: 12px;
+	color: #666;
+	font-weight: 500;
+}
+
+.medical-record-actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.medical-record-btn {
+	background: transparent;
+	border: 1px solid #ddd;
+	border-radius: 6px;
+	padding: 6px 8px;
+	cursor: pointer;
+	font-size: 12px;
+	transition: all 0.2s ease;
+}
+
+.medical-record-btn.delete {
+	color: #dc2626;
+	border-color: #dc2626;
+}
+
+.medical-record-btn.delete:hover {
+	background: #dc2626;
+	color: white;
+}
+
+.medical-record-btn.update {
+	color: #2563eb;
+	border-color: #2563eb;
+}
+
+.medical-record-btn.update:hover {
+	background: #2563eb;
+	color: white;
+}
+
+.medical-history-empty {
+	background: #fff;
+	border-radius: 12px;
+	padding: 40px;
+	text-align: center;
+	color: #666;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.medical-history-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.insert-record {
+	background-color: #5aa77a;
+	color: white;
+	border: none;
+	padding: 10px 14px;
+	border-radius: 8px;
+	cursor: pointer;
+	font-size: 14px;
+	box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+	transition: all 0.2s ease;
+}
+
+.insert-record:hover {
+	background-color: #228b4a;
+	box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
