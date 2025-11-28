@@ -1,16 +1,44 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "../css/AcceptedRequests.css";
 import { supabase } from "../lib/supabaseClient";
 
 export default function AcceptedRequests() {
+  const navigate = useNavigate();
   const [openId, setOpenId] = useState(null);
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchAcceptedRequests();
+    validateUserAndFetchRequests();
   }, []);
+
+  const validateUserAndFetchRequests = async () => {
+    // Check if user is logged in
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) {
+      navigate("/");
+      return;
+    }
+
+    // Validate user is a patient
+    const { data: userData, error: userError } = await supabase
+      .from("patient_tbl")
+      .select("id")
+      .eq("id", authData.user.id)
+      .single();
+
+    if (userError || !userData) {
+      // User is not a patient - sign out and redirect
+      await supabase.auth.signOut();
+      navigate("/");
+      return;
+    }
+
+    // User is validated, fetch accepted requests
+    fetchAcceptedRequests();
+  };
 
   const fetchAcceptedRequests = async () => {
     try {
