@@ -1,16 +1,49 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "../css/Requests.css";
 import { supabase } from "../lib/supabaseClient";
 
 export default function Requests() {
+  const navigate = useNavigate();
   const [openId, setOpenId] = useState(null);
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [user, setUser] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
-    fetchOtpRequests();
+    fetchUserAndRequests();
   }, []);
+
+  const fetchUserAndRequests = async () => {
+    // Check if user is logged in
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) {
+      navigate("/");
+      return;
+    }
+
+    // Fetch user details from patient_tbl to validate user type
+    const { data: userData, error: userError } = await supabase
+      .from("patient_tbl")
+      .select("first_name, last_name, email")
+      .eq("id", authData.user.id)
+      .single();
+
+    if (userError || !userData) {
+      // User is not a patient (might be hospital staff) - sign out and redirect
+      console.error("User is not a valid patient:", userError);
+      await supabase.auth.signOut();
+      navigate("/");
+      return;
+    }
+
+    setUser(userData);
+
+    // Fetch OTP requests
+    fetchOtpRequests();
+  };
 
   const fetchOtpRequests = async () => {
     try {
@@ -75,13 +108,100 @@ export default function Requests() {
     }
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
+  const toggleDropdown = () => {
+    setDropdownOpen((prev) => !prev);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownOpen && !event.target.closest(".user-dropdown")) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [dropdownOpen]);
+
   return (
     <div className="app-shell">
       <header className="topbar">
         <div className="topbar-left">
           <div className="brand">MediVault</div>
         </div>
-        <div className="topbar-right">M</div>
+        <div className="topbar-right">
+          <div className="user-dropdown">
+            <button
+              className="user-avatar"
+              onClick={toggleDropdown}
+              aria-label="User menu"
+            >
+              {user
+                ? (user.first_name?.[0] || user.email?.[0] || "U").toUpperCase()
+                : "U"}
+            </button>
+
+            {dropdownOpen && (
+              <div className="dropdown-menu">
+                <div className="dropdown-header">
+                  <div className="user-name">
+                    {user
+                      ? `${user.first_name || ""} ${
+                          user.last_name || ""
+                        }`.trim() || user.email
+                      : "User"}
+                  </div>
+                  <div className="user-email">{user?.email}</div>
+                </div>
+                <div className="dropdown-divider"></div>
+                <button
+                  className="dropdown-item logout-btn"
+                  onClick={handleLogout}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <polyline
+                      points="16,17 21,12 16,7"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <line
+                      x1="21"
+                      y1="12"
+                      x2="9"
+                      y2="12"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  Log out
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </header>
 
       <div className="shell-body">
