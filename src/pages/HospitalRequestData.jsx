@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useHealthcareStaff } from "../lib/hooks/useHealthcareStaff";
 import "../css/HospitalUI.css";
-import requestPatientData, { verifyOtp } from "../lib/hospitalFunctions";
+import requestPatientData, { verifyOtp, logAuditAction, searchPatients, handleEmergencyOverride as emergencyOverride } from "../lib/hospitalFunctions";
 
 export default function HospitalRequestData() {
   const navigate = useNavigate();
@@ -52,22 +52,13 @@ export default function HospitalRequestData() {
     setLoading(true);
     setError(null);
 
-    // search across several columns using `or` + ilike
-    const filter = `first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%,contact_num.ilike.%${query}%`;
-    const { data, error: sbError } = await supabase
-      .from("patient_tbl")
-      .select(
-        "id, first_name, middle_name, last_name, birthday, age, email, contact_num, blood_type, address"
-      )
-      .or(filter)
-      .limit(100);
-
-    if (sbError) {
-      console.error(sbError);
-      setError(sbError.message || "Search failed");
+    try {
+      const data = await searchPatients(query);
+      setResults(data);
+    } catch (error) {
+      console.error(error);
+      setError(error.message || "Search failed");
       setResults([]);
-    } else {
-      setResults(data || []);
     }
     setLoading(false);
   }
@@ -87,19 +78,18 @@ export default function HospitalRequestData() {
     }
 
     // derive hospital_id and healthcare_staff_id from staffData (hook provides the staff row)
-    const hospital_id =
-      staffData?.hospital_id ||
-      staffData?.hospitalId ||
-      staffData?.hospital?.id ||
-      null;
-    const healthcare_staff_id =
-      staffData?.id ||
-      staffData?.healthcare_staff_id ||
-      staffData?.staff_id ||
-      null;
+    const hospital_id = staffData?.hospital_id || null;
+    const healthcare_staff_id = staffData?.id || null;
+
+    console.log('Request data with:', { 
+      hospital_id, 
+      healthcare_staff_id, 
+      patient_id: patient.id, 
+      staffData 
+    });
 
     if (!hospital_id || !healthcare_staff_id) {
-      setError("Missing hospital or staff information for the logged-in user");
+      setError(`Missing hospital or staff information. Hospital ID: ${hospital_id}, Staff ID: ${healthcare_staff_id}`);
       return;
     }
 
@@ -149,6 +139,18 @@ export default function HospitalRequestData() {
     navigate("/hospital-login");
   };
 
+  const goToRequestData = () => {
+    navigate('/hospital-request-data');
+  };
+
+  const goToAcceptedRequests = () => {
+    navigate('/hospital-accepted-requests');
+  };
+
+  const goToDashboard = () => {
+    navigate('/hospital-dashboard');
+  };
+
   const toggleDropdown = () => {
     setDropdownOpen((prev) => !prev);
   };
@@ -158,50 +160,13 @@ export default function HospitalRequestData() {
 
   // Emergency Override Function
   const handleEmergencyOverride = async () => {
-    if (!selectedPatient || !emergencyReason.trim()) {
-      alert("Please provide a detailed reason for the emergency override.");
-      return;
-    }
-
-    if (emergencyReason.length < 20) {
-      alert("Emergency reason must be at least 20 characters long.");
-      return;
-    }
-
     setIsEmergencyLoading(true);
 
     try {
-      // Log the emergency override in audit_logs table
-      const { error: logError } = await supabase.from("audit_logs").insert({
-        patient_id: selectedPatient.id,
-        hospital_id:
-          staffData?.hospital_id ||
-          staffData?.hospitalId ||
-          staffData?.hospital?.id,
-        healthcare_staff_id: staffData?.id,
-        action: `EMERGENCY_OVERRIDE: ${emergencyReason}`,
-      });
-
-      if (logError) throw logError;
-
-      // Insert into accepted_requests table to record the emergency access
-      const { error: acceptedError } = await supabase
-        .from("accepted_requests")
-        .insert({
-          patient_id: selectedPatient.id,
-          hospital_id:
-            staffData?.hospital_id ||
-            staffData?.hospitalId ||
-            staffData?.hospital?.id,
-          healthcare_staff_id: staffData?.id,
-        });
-
-      if (acceptedError) throw acceptedError;
-
+      const result = await emergencyOverride(selectedPatient, emergencyReason, staffData);
+      
       // Show success message
-      setSuccessMessage(
-        `Emergency override logged successfully for ${selectedPatient.first_name} ${selectedPatient.last_name}. Access granted for medical emergency.`
-      );
+      setSuccessMessage(result.message);
 
       // Close modals and reset state
       setShowEmergencyModal(false);
@@ -212,7 +177,7 @@ export default function HospitalRequestData() {
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (error) {
       console.error("Emergency override error:", error);
-      alert("Failed to process emergency override. Please try again.");
+      alert(error.message || "Failed to process emergency override. Please try again.");
     } finally {
       setIsEmergencyLoading(false);
     }
@@ -278,11 +243,14 @@ export default function HospitalRequestData() {
         </div>
 
         <div className="nav-actions">
-          <button type="button" className="nav-btn">
+          <button type="button" className="nav-btn" onClick={goToRequestData}>
             Request Data
           </button>
-          <button type="button" className="nav-btn">
+          <button type="button" className="nav-btn" onClick={goToAcceptedRequests}>
             Accepted Requests
+          </button>
+          <button type="button" className="nav-btn" onClick={goToDashboard}>
+            Dashboard
           </button>
           <div className="user-dropdown">
             <button

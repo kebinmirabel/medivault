@@ -1,6 +1,35 @@
 import { supabase } from "./supabaseClient";
 
 /**
+ * Log an action to the audit_logs table
+ * @param {string} patient_id - Patient ID
+ * @param {string} hospital_id - Hospital ID
+ * @param {string} healthcare_staff_id - Healthcare staff ID
+ * @param {string} action - Action description
+ */
+export async function logAuditAction(patient_id, hospital_id, healthcare_staff_id, action) {
+	try {
+		const { data, error } = await supabase
+			.from('audit_logs')
+			.insert([{
+				patient_id,
+				hospital_id,
+				healthcare_staff_id,
+				action,
+				created_at: new Date().toISOString()
+			}]);
+
+		if (error) {
+			console.error('Error logging audit action:', error);
+		}
+		return { data, error };
+	} catch (err) {
+		console.error('Error in logAuditAction:', err);
+		return { data: null, error: err };
+	}
+}
+
+/**
  * Generate a numeric OTP string with the given length (default 6).
  * Uses crypto RNG where available.
  */
@@ -36,6 +65,14 @@ export async function requestPatientData({ hospital_id, patient_id, healthcare_s
 		return { data: null, error: new Error("patient_id is required") };
 	}
 
+	if (!hospital_id) {
+		return { data: null, error: new Error("hospital_id is required") };
+	}
+
+	if (!healthcare_staff_id) {
+		return { data: null, error: new Error("healthcare_staff_id is required") };
+	}
+
 	// Expect hospital_id and healthcare_staff_id to be provided explicitly by caller.
 	const otp = generateOtp(6);
 	const created_at = new Date().toISOString();
@@ -48,14 +85,54 @@ export async function requestPatientData({ hospital_id, patient_id, healthcare_s
 		otp,
 	};
 
+	console.log('Attempting to insert OTP with payload:', payload);
+
 	try {
-		const { data, error } = await supabase.from('otp').insert([payload]).select().single();
-		if (error) {
-			return { data: null, error };
+		// Verify the user is authenticated before attempting insert
+		const { data: { user }, error: authError } = await supabase.auth.getUser();
+		if (authError || !user) {
+			console.error('Authentication error:', authError);
+			return { data: null, error: new Error('User not authenticated') };
 		}
+
+		console.log('Authenticated user ID:', user.id);
+		console.log('healthcare_staff_id in payload:', healthcare_staff_id);
+
+		// Get the current session to check JWT
+		const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+		console.log('Current session:', session ? 'exists' : 'null', sessionError);
+		
+		if (session) {
+			console.log('Access token exists:', !!session.access_token);
+			console.log('Session user ID:', session.user?.id);
+		}
+
+		// Try to refresh the session to ensure auth context is current
+		const { error: refreshError } = await supabase.auth.refreshSession();
+		if (refreshError) {
+			console.log('Session refresh failed:', refreshError);
+		}
+
+		// Use a database function to insert OTP (bypasses RLS issues)
+		const { data, error } = await supabase.rpc('insert_otp_record', {
+			p_patient_id: patient_id,
+			p_hospital_id: hospital_id,
+			p_healthcare_staff_id: healthcare_staff_id,
+			p_otp: otp
+		});
+
+		if (error) {
+			console.error('Supabase OTP insert error:', error);
+			return { data: null, error: new Error(`Failed to create OTP request: ${error.message}`) };
+		}
+
+		// Log the request data action
+		await logAuditAction(patient_id, hospital_id, healthcare_staff_id, 'REQUESTED DATA');
+
 		return { data, error: null };
 	} catch (err) {
-		return { data: null, error: err };
+		console.error('requestPatientData error:', err);
+		return { data: null, error: new Error(`Request failed: ${err.message}`) };
 	}
 }
 
@@ -114,6 +191,9 @@ export async function verifyOtp(otp) {
 			// If deletion fails due to RLS, log but still return success since insert worked
 			console.warn("OTP record not deleted (RLS may be blocking), but accepted_requests was created");
 		}
+
+		// Log the accept request action
+		await logAuditAction(patient_id, hospital_id, healthcare_staff_id, 'ACCEPTED_REQUEST');
 
 		return { data: insertData, error: null };
 	} catch (err) {
@@ -207,6 +287,16 @@ export async function createMedicalRecord(recordData) {
 			throw insertError;
 		}
 
+		// Log the create record action
+		if (data && data.length > 0) {
+			await logAuditAction(
+				recordData.patient_id,
+				recordData.hospital_id,
+				recordData.healthcare_staff_id,
+				'CREATED_NEW_RECORD'
+			);
+		}
+
 		return data;
 	} catch (error) {
 		console.error('Error creating record:', error);
@@ -215,8 +305,15 @@ export async function createMedicalRecord(recordData) {
 }
 
 // Update existing medical record
-export async function updateMedicalRecord(recordId, updateData) {
+export async function updateMedicalRecord(recordId, updateData, staffId = null) {
 	try {
+		// First get the record to extract patient_id and hospital_id for audit logging
+		const { data: recordInfo, error: fetchError } = await supabase
+			.from('patient_records_tbl')
+			.select('patient_id, hospital_id')
+			.eq('id', recordId)
+			.single();
+
 		const { error } = await supabase
 			.from('patient_records_tbl')
 			.update(updateData)
@@ -224,6 +321,16 @@ export async function updateMedicalRecord(recordId, updateData) {
 
 		if (error) {
 			throw error;
+		}
+
+		// Log the update record action
+		if (recordInfo && staffId) {
+			await logAuditAction(
+				recordInfo.patient_id,
+				recordInfo.hospital_id,
+				staffId,
+				'UPDATED_RECORD'
+			);
 		}
 
 		return true;
@@ -234,8 +341,15 @@ export async function updateMedicalRecord(recordId, updateData) {
 }
 
 // Delete medical record
-export async function deleteMedicalRecord(recordId) {
+export async function deleteMedicalRecord(recordId, staffId = null) {
 	try {
+		// First get the record info for audit logging before deletion
+		const { data: recordInfo, error: fetchError } = await supabase
+			.from('patient_records_tbl')
+			.select('patient_id, hospital_id')
+			.eq('id', recordId)
+			.single();
+
 		const { error } = await supabase
 			.from('patient_records_tbl')
 			.delete()
@@ -245,9 +359,91 @@ export async function deleteMedicalRecord(recordId) {
 			throw error;
 		}
 
+		// Log the delete record action
+		if (recordInfo && staffId) {
+			await logAuditAction(
+				recordInfo.patient_id,
+				recordInfo.hospital_id,
+				staffId,
+				'DELETED_RECORD'
+			);
+		}
+
 		return true;
 	} catch (error) {
 		console.error('Error deleting record:', error);
+		throw error;
+	}
+}
+
+// Search patients across multiple fields
+export async function searchPatients(query) {
+	try {
+		// search across several columns using `or` + ilike
+		const filter = `first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%,contact_num.ilike.%${query}%`;
+		const { data, error } = await supabase
+			.from("patient_tbl")
+			.select(
+				"id, first_name, middle_name, last_name, birthday, age, email, contact_num, blood_type, address"
+			)
+			.or(filter)
+			.limit(100);
+
+		if (error) {
+			console.error('Error searching patients:', error);
+			throw error;
+		}
+
+		return data || [];
+	} catch (error) {
+		console.error('Error in searchPatients:', error);
+		throw error;
+	}
+}
+
+// Handle emergency override access for Level 3 staff
+export async function handleEmergencyOverride(selectedPatient, emergencyReason, staffData) {
+	try {
+		if (!selectedPatient || !emergencyReason.trim()) {
+			throw new Error("Please provide a detailed reason for the emergency override.");
+		}
+
+		if (emergencyReason.length < 20) {
+			throw new Error("Emergency reason must be at least 20 characters long.");
+		}
+
+		const hospital_id = staffData?.hospital_id;
+		const healthcare_staff_id = staffData?.id;
+
+		if (!hospital_id || !healthcare_staff_id) {
+			throw new Error("Missing hospital or staff information");
+		}
+
+		// Log the emergency override using centralized function
+		await logAuditAction(
+			selectedPatient.id,
+			hospital_id,
+			healthcare_staff_id,
+			`EMERGENCY_OVERRIDE: ${emergencyReason}`
+		);
+
+		// Insert into accepted_requests table to record the emergency access
+		const { error: acceptedError } = await supabase
+			.from("accepted_requests")
+			.insert({
+				patient_id: selectedPatient.id,
+				hospital_id,
+				healthcare_staff_id,
+			});
+
+		if (acceptedError) throw acceptedError;
+
+		return {
+			success: true,
+			message: `Emergency override logged successfully for ${selectedPatient.first_name} ${selectedPatient.last_name}. Access granted for medical emergency.`
+		};
+	} catch (error) {
+		console.error("Emergency override error:", error);
 		throw error;
 	}
 }

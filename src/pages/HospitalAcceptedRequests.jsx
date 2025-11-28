@@ -15,6 +15,23 @@ export default function HospitalAcceptedRequests() {
   // useHealthcareStaff handles authentication & staff lookup and redirects on unauthenticated users
   const { staffData, loading: staffLoading, error: staffError } = useHealthcareStaff();
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/hospital-login');
+  };
+
+  const goToRequestData = () => {
+    navigate('/hospital-request-data');
+  };
+
+  const goToAcceptedRequests = () => {
+    navigate('/hospital-accepted-requests');
+  };
+
+  const goToDashboard = () => {
+    navigate('/hospital-dashboard');
+  };
+
   // debounce search by 400ms
   useEffect(() => {
     // do not search until staff access is confirmed
@@ -41,7 +58,7 @@ export default function HospitalAcceptedRequests() {
     setError(null);
 
     // Get hospital_id from staffData for filtering
-    const hospital_id = staffData?.hospital_id || staffData?.hospitalId || staffData?.hospital?.id || null;
+    const hospital_id = staffData?.hospital_id || null;
     
     if (!hospital_id) {
       setError('Missing hospital information for the logged-in user');
@@ -148,9 +165,29 @@ export default function HospitalAcceptedRequests() {
         </div>
 
         <div className="nav-actions">
-          <button type="button" className="nav-btn">Request Data</button>
-          <button type="button" className="nav-btn">Accepted Requests</button>
-          <div className="nav-avatar">M</div>
+          <button type="button" className="nav-btn" onClick={goToRequestData}>Request Data</button>
+          <button type="button" className="nav-btn" onClick={goToAcceptedRequests}>Accepted Requests</button>
+          <button type="button" className="nav-btn" onClick={goToDashboard}>Dashboard</button>
+          
+          <div className="user-dropdown">
+            <button className="nav-avatar" onClick={() => {}} aria-label="User menu">
+              {staffData ? (staffData.first_name?.[0] || staffData.email?.[0] || "S").toUpperCase() : "S"}
+            </button>
+            
+            <div className="dropdown-menu" style={{display: 'none'}}>
+              <div className="dropdown-header">
+                <div className="user-name">
+                  {staffData ? `${staffData.first_name || ""} ${staffData.last_name || ""}`.trim() || staffData.email : "Staff"}
+                </div>
+                <div className="user-email">{staffData?.email}</div>
+                <div className="user-role">{staffData?.role} - {staffData?.occupation}</div>
+              </div>
+              <div className="dropdown-divider"></div>
+              <button className="dropdown-item logout-btn" onClick={handleLogout}>
+                Log out
+              </button>
+            </div>
+          </div>
         </div>
       </nav>
 

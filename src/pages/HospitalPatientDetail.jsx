@@ -61,6 +61,23 @@ export default function HospitalPatientDetail() {
   // useHealthcareStaff handles authentication & staff lookup
   const { staffData, loading: staffLoading, error: staffError } = useHealthcareStaff();
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/hospital-login');
+  };
+
+  const goToRequestData = () => {
+    navigate('/hospital-request-data');
+  };
+
+  const goToAcceptedRequests = () => {
+    navigate('/hospital-accepted-requests');
+  };
+
+  const goToDashboard = () => {
+    navigate('/hospital-dashboard');
+  };
+
   useEffect(() => {
     if (staffData && patient_id) {
       fetchPatientData();
@@ -161,6 +178,8 @@ export default function HospitalPatientDetail() {
     setSubmitting(true);
     
     try {
+      const healthcare_staff_id = staffData?.id || staffData?.healthcare_staff_id || staffData?.staff_id;
+      
       const updateData = {
         transaction: updateForm.transaction || null,
         medication: updateForm.medication || null,
@@ -174,7 +193,7 @@ export default function HospitalPatientDetail() {
         doctor_id: updateForm.doctor || null
       };
 
-      await updateMedicalRecord(selectedRecord.id, updateData);
+      await updateMedicalRecord(selectedRecord.id, updateData, healthcare_staff_id);
 
       // Refresh the patient history
       await fetchPatientData();
@@ -194,7 +213,9 @@ export default function HospitalPatientDetail() {
     setSubmitting(true);
     
     try {
-      await deleteMedicalRecord(selectedRecord.id);
+      const healthcare_staff_id = staffData?.id || staffData?.healthcare_staff_id || staffData?.staff_id;
+      
+      await deleteMedicalRecord(selectedRecord.id, healthcare_staff_id);
 
       // Refresh the patient history
       await fetchPatientData();
@@ -251,8 +272,8 @@ export default function HospitalPatientDetail() {
     setSubmitting(true);
     
     try {
-      const hospital_id = staffData?.hospital_id || staffData?.hospitalId || staffData?.hospital?.id;
-      const healthcare_staff_id = staffData?.id || staffData?.healthcare_staff_id || staffData?.staff_id;
+      const hospital_id = staffData?.hospital_id;
+      const healthcare_staff_id = staffData?.id;
       
       if (!hospital_id || !healthcare_staff_id) {
         throw new Error('Missing hospital or staff information');
@@ -387,9 +408,29 @@ export default function HospitalPatientDetail() {
         </div>
 
         <div className="nav-actions">
-          <button type="button" className="nav-btn">Request Data</button>
-          <button type="button" className="nav-btn">Accepted Requests</button>
-          <div className="nav-avatar">M</div>
+          <button type="button" className="nav-btn" onClick={goToRequestData}>Request Data</button>
+          <button type="button" className="nav-btn" onClick={goToAcceptedRequests}>Accepted Requests</button>
+          <button type="button" className="nav-btn" onClick={goToDashboard}>Dashboard</button>
+          
+          <div className="user-dropdown">
+            <button className="nav-avatar" onClick={() => {}} aria-label="User menu">
+              {staffData ? (staffData.first_name?.[0] || staffData.email?.[0] || "S").toUpperCase() : "S"}
+            </button>
+            
+            <div className="dropdown-menu" style={{display: 'none'}}>
+              <div className="dropdown-header">
+                <div className="user-name">
+                  {staffData ? `${staffData.first_name || ""} ${staffData.last_name || ""}`.trim() || staffData.email : "Staff"}
+                </div>
+                <div className="user-email">{staffData?.email}</div>
+                <div className="user-role">{staffData?.role} - {staffData?.occupation}</div>
+              </div>
+              <div className="dropdown-divider"></div>
+              <button className="dropdown-item logout-btn" onClick={handleLogout}>
+                Log out
+              </button>
+            </div>
+          </div>
         </div>
       </nav>
 

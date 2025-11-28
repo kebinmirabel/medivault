@@ -35,14 +35,22 @@ export function useHealthcareStaff() {
           .eq('id', userId)
           .single() // expect exactly one row
 
-        if (staffError || !staff) {
-          // User is authenticated but not a healthcare staff member
-          // Return error instead of redirecting
+        if (staffError) {
+          console.error('Staff fetch error:', staffError)
+          setError(`Healthcare Staff User not found: ${staffError.message}`)
+          setStaffData(null)
+          setLoading(false)
+          return
+        }
+
+        if (!staff) {
           setError('Healthcare Staff User not found. Check your credentials.')
           setStaffData(null)
           setLoading(false)
           return
         }
+
+        console.log('Staff data loaded:', staff)
 
         // 3) User is a staff member, store their data
         setStaffData(staff)
