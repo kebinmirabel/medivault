@@ -1,16 +1,44 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "../css/MedicalHistory.css";
 import { supabase } from "../lib/supabaseClient";
 
 export default function MedicalHistory() {
+  const navigate = useNavigate();
   const [openId, setOpenId] = useState(null);
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchMedicalRecords();
+    validateUserAndFetchRecords();
   }, []);
+
+  const validateUserAndFetchRecords = async () => {
+    // Check if user is logged in
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) {
+      navigate("/");
+      return;
+    }
+
+    // Validate user is a patient
+    const { data: userData, error: userError } = await supabase
+      .from("patient_tbl")
+      .select("id")
+      .eq("id", authData.user.id)
+      .single();
+
+    if (userError || !userData) {
+      // User is not a patient - sign out and redirect
+      await supabase.auth.signOut();
+      navigate("/");
+      return;
+    }
+
+    // User is validated, fetch medical records
+    fetchMedicalRecords();
+  };
 
   const fetchMedicalRecords = async () => {
     try {
