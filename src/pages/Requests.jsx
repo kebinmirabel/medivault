@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import "./Requests.css";
+import "../css/Requests.css";
 import { supabase } from "../lib/supabaseClient";
 
 export default function Requests() {

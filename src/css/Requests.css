@@ -10,6 +10,11 @@
   --error-text: #c33;
 }
 
+body {
+  display: block;
+}
+
+
 .app-shell {
   min-height: 100vh;
   background: var(--panel-bg);
