@@ -3,7 +3,12 @@ import { supabase } from "../lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useHealthcareStaff } from "../lib/hooks/useHealthcareStaff";
 import "../css/HospitalUI.css";
-import requestPatientData, { verifyOtp, logAuditAction, searchPatients, handleEmergencyOverride as emergencyOverride } from "../lib/hospitalFunctions";
+import requestPatientData, {
+  verifyOtp,
+  logAuditAction,
+  searchPatients,
+  handleEmergencyOverride as emergencyOverride,
+} from "../lib/HospitalFunctions";
 
 export default function HospitalRequestData() {
   const navigate = useNavigate();
@@ -81,15 +86,17 @@ export default function HospitalRequestData() {
     const hospital_id = staffData?.hospital_id || null;
     const healthcare_staff_id = staffData?.id || null;
 
-    console.log('Request data with:', { 
-      hospital_id, 
-      healthcare_staff_id, 
-      patient_id: patient.id, 
-      staffData 
+    console.log("Request data with:", {
+      hospital_id,
+      healthcare_staff_id,
+      patient_id: patient.id,
+      staffData,
     });
 
     if (!hospital_id || !healthcare_staff_id) {
-      setError(`Missing hospital or staff information. Hospital ID: ${hospital_id}, Staff ID: ${healthcare_staff_id}`);
+      setError(
+        `Missing hospital or staff information. Hospital ID: ${hospital_id}, Staff ID: ${healthcare_staff_id}`
+      );
       return;
     }
 
@@ -140,15 +147,15 @@ export default function HospitalRequestData() {
   };
 
   const goToRequestData = () => {
-    navigate('/hospital-request-data');
+    navigate("/hospital-request-data");
   };
 
   const goToAcceptedRequests = () => {
-    navigate('/hospital-accepted-requests');
+    navigate("/hospital-accepted-requests");
   };
 
   const goToDashboard = () => {
-    navigate('/hospital-dashboard');
+    navigate("/hospital-dashboard");
   };
 
   const toggleDropdown = () => {
@@ -163,8 +170,12 @@ export default function HospitalRequestData() {
     setIsEmergencyLoading(true);
 
     try {
-      const result = await emergencyOverride(selectedPatient, emergencyReason, staffData);
-      
+      const result = await emergencyOverride(
+        selectedPatient,
+        emergencyReason,
+        staffData
+      );
+
       // Show success message
       setSuccessMessage(result.message);
 
@@ -177,7 +188,10 @@ export default function HospitalRequestData() {
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (error) {
       console.error("Emergency override error:", error);
-      alert(error.message || "Failed to process emergency override. Please try again.");
+      alert(
+        error.message ||
+          "Failed to process emergency override. Please try again."
+      );
     } finally {
       setIsEmergencyLoading(false);
     }
@@ -246,7 +260,11 @@ export default function HospitalRequestData() {
           <button type="button" className="nav-btn" onClick={goToRequestData}>
             Request Data
           </button>
-          <button type="button" className="nav-btn" onClick={goToAcceptedRequests}>
+          <button
+            type="button"
+            className="nav-btn"
+            onClick={goToAcceptedRequests}
+          >
             Accepted Requests
           </button>
           <button type="button" className="nav-btn" onClick={goToDashboard}>
