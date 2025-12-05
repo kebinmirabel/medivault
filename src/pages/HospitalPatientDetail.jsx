@@ -2,13 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useHealthcareStaff } from "../lib/hooks/useHealthcareStaff";
-import { 
+import {
   fetchPatientData as fetchPatientDataAPI,
   fetchDoctors as fetchDoctorsAPI,
   createMedicalRecord,
   updateMedicalRecord,
-  deleteMedicalRecord
-} from "../lib/hospitalFunctions";
+  deleteMedicalRecord,
+} from "../lib/HospitalFunctions.js";
 import "../css/HospitalUI.css";
 
 export default function HospitalPatientDetail() {
@@ -21,61 +21,65 @@ export default function HospitalPatientDetail() {
   const [error, setError] = useState(null);
   const [showNewRecordModal, setShowNewRecordModal] = useState(false);
   const [newRecordForm, setNewRecordForm] = useState({
-    transaction: '',
-    medication: '',
-    notes: '',
-    assessment: '',
-    blood_pressure: '',
-    drinking: '',
-    smoking: '',
-    height: '',
-    weight: '',
-    doctor: ''
+    transaction: "",
+    medication: "",
+    notes: "",
+    assessment: "",
+    blood_pressure: "",
+    drinking: "",
+    smoking: "",
+    height: "",
+    weight: "",
+    doctor: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [doctors, setDoctors] = useState([]);
-  const [doctorSearch, setDoctorSearch] = useState('');
+  const [doctorSearch, setDoctorSearch] = useState("");
   const [showDoctorDropdown, setShowDoctorDropdown] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [updateForm, setUpdateForm] = useState({
-    transaction: '',
-    medication: '',
-    notes: '',
-    assessment: '',
-    blood_pressure: '',
-    drinking: '',
-    smoking: '',
-    height: '',
-    weight: '',
-    doctor: ''
+    transaction: "",
+    medication: "",
+    notes: "",
+    assessment: "",
+    blood_pressure: "",
+    drinking: "",
+    smoking: "",
+    height: "",
+    weight: "",
+    doctor: "",
   });
 
   // Filter doctors based on search
-  const filteredDoctors = doctors.filter(doctor => {
+  const filteredDoctors = doctors.filter((doctor) => {
     const fullName = `${doctor.first_name} ${doctor.last_name}`.toLowerCase();
     return fullName.includes(doctorSearch.toLowerCase());
   });
 
   // useHealthcareStaff handles authentication & staff lookup
-  const { staffData, loading: staffLoading, error: staffError } = useHealthcareStaff();
+  const {
+    staffData,
+    loading: staffLoading,
+    error: staffError,
+  } = useHealthcareStaff();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate('/hospital-login');
+    navigate("/hospital-login");
   };
 
   const goToRequestData = () => {
-    navigate('/hospital-request-data');
+    navigate("/hospital-request-data");
   };
 
   const goToAcceptedRequests = () => {
-    navigate('/hospital-accepted-requests');
+    navigate("/hospital-accepted-requests");
   };
 
   const goToDashboard = () => {
-    navigate('/hospital-dashboard');
+    navigate("/hospital-dashboard");
   };
 
   useEffect(() => {
@@ -104,40 +108,46 @@ export default function HospitalPatientDetail() {
       const doctors = await fetchDoctorsAPI();
       setDoctors(doctors);
     } catch (error) {
-      console.error('Error fetching doctors:', error);
+      console.error("Error fetching doctors:", error);
     }
   }
 
   // Modal handlers
   const handleFormChange = (field, value) => {
-    setNewRecordForm(prev => ({ ...prev, [field]: value }));
+    setNewRecordForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleDoctorSearch = (value) => {
     setDoctorSearch(value);
     setShowDoctorDropdown(true);
-    setNewRecordForm(prev => ({ ...prev, doctor: '' }));
+    setNewRecordForm((prev) => ({ ...prev, doctor: "" }));
   };
 
   const selectDoctor = (doctor) => {
     setDoctorSearch(`Dr. ${doctor.first_name} ${doctor.last_name}`);
-    setNewRecordForm(prev => ({ ...prev, doctor: doctor.id }));
+    setNewRecordForm((prev) => ({ ...prev, doctor: doctor.id }));
     setShowDoctorDropdown(false);
   };
 
   const openUpdateModal = (record) => {
     setSelectedRecord(record);
     setUpdateForm({
-      transaction: record.transaction || '',
-      medication: record.medication || '',
-      notes: record.notes || '',
-      assessment: record.assessment || '',
-      blood_pressure: record.blood_pressure || '',
-      drinking: record.drinking === true ? 'Yes' : record.drinking === false ? 'No' : '',
-      smoking: record.smoking === true ? 'Yes' : record.smoking === false ? 'No' : '',
-      height: record.height || '',
-      weight: record.weight || '',
-      doctor: record.doctor_id || ''
+      transaction: record.transaction || "",
+      medication: record.medication || "",
+      notes: record.notes || "",
+      assessment: record.assessment || "",
+      blood_pressure: record.blood_pressure || "",
+      drinking:
+        record.drinking === true
+          ? "Yes"
+          : record.drinking === false
+          ? "No"
+          : "",
+      smoking:
+        record.smoking === true ? "Yes" : record.smoking === false ? "No" : "",
+      height: record.height || "",
+      weight: record.weight || "",
+      doctor: record.doctor_id || "",
     });
     setShowUpdateModal(true);
   };
@@ -146,16 +156,16 @@ export default function HospitalPatientDetail() {
     setShowUpdateModal(false);
     setSelectedRecord(null);
     setUpdateForm({
-      transaction: '',
-      medication: '',
-      notes: '',
-      assessment: '',
-      blood_pressure: '',
-      drinking: '',
-      smoking: '',
-      height: '',
-      weight: '',
-      doctor: ''
+      transaction: "",
+      medication: "",
+      notes: "",
+      assessment: "",
+      blood_pressure: "",
+      drinking: "",
+      smoking: "",
+      height: "",
+      weight: "",
+      doctor: "",
     });
   };
 
@@ -170,38 +180,42 @@ export default function HospitalPatientDetail() {
   };
 
   const handleUpdateForm = (field, value) => {
-    setUpdateForm(prev => ({ ...prev, [field]: value }));
+    setUpdateForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleUpdateRecord = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    
+
     try {
-      const healthcare_staff_id = staffData?.id || staffData?.healthcare_staff_id || staffData?.staff_id;
-      
+      const healthcare_staff_id =
+        staffData?.id || staffData?.healthcare_staff_id || staffData?.staff_id;
+
       const updateData = {
         transaction: updateForm.transaction || null,
         medication: updateForm.medication || null,
         notes: updateForm.notes || null,
         assessment: updateForm.assessment || null,
         blood_pressure: updateForm.blood_pressure || null,
-        drinking: updateForm.drinking === 'Yes' ? true : false,
-        smoking: updateForm.smoking === 'Yes' ? true : false,
+        drinking: updateForm.drinking === "Yes" ? true : false,
+        smoking: updateForm.smoking === "Yes" ? true : false,
         height: updateForm.height || null,
         weight: updateForm.weight || null,
-        doctor_id: updateForm.doctor || null
+        doctor_id: updateForm.doctor || null,
       };
 
-      await updateMedicalRecord(selectedRecord.id, updateData, healthcare_staff_id);
+      await updateMedicalRecord(
+        selectedRecord.id,
+        updateData,
+        healthcare_staff_id
+      );
 
       // Refresh the patient history
       await fetchPatientData();
-      
+
       // Close modal and show success
       closeUpdateModal();
-      alert('Medical record updated successfully!');
-
+      alert("Medical record updated successfully!");
     } catch (error) {
       alert(`Failed to update record: ${error.message}`);
     } finally {
@@ -211,19 +225,19 @@ export default function HospitalPatientDetail() {
 
   const handleDeleteRecord = async () => {
     setSubmitting(true);
-    
+
     try {
-      const healthcare_staff_id = staffData?.id || staffData?.healthcare_staff_id || staffData?.staff_id;
-      
+      const healthcare_staff_id =
+        staffData?.id || staffData?.healthcare_staff_id || staffData?.staff_id;
+
       await deleteMedicalRecord(selectedRecord.id, healthcare_staff_id);
 
       // Refresh the patient history
       await fetchPatientData();
-      
+
       // Close modal and show success
       closeDeleteModal();
-      alert('Medical record deleted successfully!');
-
+      alert("Medical record deleted successfully!");
     } catch (error) {
       alert(`Failed to delete record: ${error.message}`);
     } finally {
@@ -233,50 +247,50 @@ export default function HospitalPatientDetail() {
 
   const openNewRecordModal = () => {
     setNewRecordForm({
-      transaction: '',
-      medication: '',
-      notes: '',
-      assessment: '',
-      blood_pressure: '',
-      drinking: '',
-      smoking: '',
-      height: '',
-      weight: '',
-      doctor: ''
+      transaction: "",
+      medication: "",
+      notes: "",
+      assessment: "",
+      blood_pressure: "",
+      drinking: "",
+      smoking: "",
+      height: "",
+      weight: "",
+      doctor: "",
     });
-    setDoctorSearch('');
+    setDoctorSearch("");
     setShowDoctorDropdown(false);
     setShowNewRecordModal(true);
   };
 
   const closeNewRecordModal = () => {
     setShowNewRecordModal(false);
-    setDoctorSearch('');
+    setDoctorSearch("");
     setShowDoctorDropdown(false);
     setNewRecordForm({
-      transaction: '',
-      medication: '',
-      notes: '',
-      assessment: '',
-      blood_pressure: '',
-      drinking: '',
-      smoking: '',
-      height: '',
-      weight: '',
-      doctor: ''
+      transaction: "",
+      medication: "",
+      notes: "",
+      assessment: "",
+      blood_pressure: "",
+      drinking: "",
+      smoking: "",
+      height: "",
+      weight: "",
+      doctor: "",
     });
   };
 
   const handleCreateRecord = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    
+
     try {
       const hospital_id = staffData?.hospital_id;
       const healthcare_staff_id = staffData?.id;
-      
+
       if (!hospital_id || !healthcare_staff_id) {
-        throw new Error('Missing hospital or staff information');
+        throw new Error("Missing hospital or staff information");
       }
 
       const recordData = {
@@ -288,23 +302,22 @@ export default function HospitalPatientDetail() {
         notes: newRecordForm.notes || null,
         assessment: newRecordForm.assessment || null,
         blood_pressure: newRecordForm.blood_pressure || null,
-        drinking: newRecordForm.drinking === 'Yes' ? true : false,
-        smoking: newRecordForm.smoking === 'Yes' ? true : false,
+        drinking: newRecordForm.drinking === "Yes" ? true : false,
+        smoking: newRecordForm.smoking === "Yes" ? true : false,
         height: newRecordForm.height || null,
         weight: newRecordForm.weight || null,
         doctor_id: newRecordForm.doctor || null,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
 
       await createMedicalRecord(recordData);
-      
+
       // Refresh the patient history
       await fetchPatientData();
-      
+
       // Close modal and show success
       closeNewRecordModal();
-      alert('Medical record created successfully!');
-
+      alert("Medical record created successfully!");
     } catch (error) {
       alert(`Failed to create record: ${error.message}`);
     } finally {
@@ -313,13 +326,16 @@ export default function HospitalPatientDetail() {
   };
 
   // Helper function to get full name
-  const fullName = (p) => `${p.first_name || ""} ${p.middle_name || ""} ${p.last_name || ""}`.replace(/\s+/g, " ").trim();
+  const fullName = (p) =>
+    `${p.first_name || ""} ${p.middle_name || ""} ${p.last_name || ""}`
+      .replace(/\s+/g, " ")
+      .trim();
 
   // Get latest height and weight
   const getLatestVitals = () => {
     let latestHeight = null;
     let latestWeight = null;
-    
+
     for (const record of patientHistory) {
       if (!latestHeight && record.height) {
         latestHeight = record.height;
@@ -329,7 +345,7 @@ export default function HospitalPatientDetail() {
       }
       if (latestHeight && latestWeight) break;
     }
-    
+
     return { height: latestHeight, weight: latestWeight };
   };
 
@@ -375,7 +391,9 @@ export default function HospitalPatientDetail() {
         <div className="lr-inner">
           <main className="lr-box">
             <p style={{ color: "#b00" }}>{error}</p>
-            <button onClick={() => navigate(-1)} className="lr-submit">Go Back</button>
+            <button onClick={() => navigate(-1)} className="lr-submit">
+              Go Back
+            </button>
           </main>
         </div>
       </div>
@@ -388,7 +406,9 @@ export default function HospitalPatientDetail() {
         <div className="lr-inner">
           <main className="lr-box">
             <p>Patient not found.</p>
-            <button onClick={() => navigate(-1)} className="lr-submit">Go Back</button>
+            <button onClick={() => navigate(-1)} className="lr-submit">
+              Go Back
+            </button>
           </main>
         </div>
       </div>
@@ -408,25 +428,54 @@ export default function HospitalPatientDetail() {
         </div>
 
         <div className="nav-actions">
-          <button type="button" className="nav-btn" onClick={goToRequestData}>Request Data</button>
-          <button type="button" className="nav-btn" onClick={goToAcceptedRequests}>Accepted Requests</button>
-          <button type="button" className="nav-btn" onClick={goToDashboard}>Dashboard</button>
-          
+          <button type="button" className="nav-btn" onClick={goToRequestData}>
+            Request Data
+          </button>
+          <button
+            type="button"
+            className="nav-btn"
+            onClick={goToAcceptedRequests}
+          >
+            Accepted Requests
+          </button>
+          <button type="button" className="nav-btn" onClick={goToDashboard}>
+            Dashboard
+          </button>
+
           <div className="user-dropdown">
-            <button className="nav-avatar" onClick={() => {}} aria-label="User menu">
-              {staffData ? (staffData.first_name?.[0] || staffData.email?.[0] || "S").toUpperCase() : "S"}
+            <button
+              className="nav-avatar"
+              onClick={() => {}}
+              aria-label="User menu"
+            >
+              {staffData
+                ? (
+                    staffData.first_name?.[0] ||
+                    staffData.email?.[0] ||
+                    "S"
+                  ).toUpperCase()
+                : "S"}
             </button>
-            
-            <div className="dropdown-menu" style={{display: 'none'}}>
+
+            <div className="dropdown-menu" style={{ display: "none" }}>
               <div className="dropdown-header">
                 <div className="user-name">
-                  {staffData ? `${staffData.first_name || ""} ${staffData.last_name || ""}`.trim() || staffData.email : "Staff"}
+                  {staffData
+                    ? `${staffData.first_name || ""} ${
+                        staffData.last_name || ""
+                      }`.trim() || staffData.email
+                    : "Staff"}
                 </div>
                 <div className="user-email">{staffData?.email}</div>
-                <div className="user-role">{staffData?.role} - {staffData?.occupation}</div>
+                <div className="user-role">
+                  {staffData?.role} - {staffData?.occupation}
+                </div>
               </div>
               <div className="dropdown-divider"></div>
-              <button className="dropdown-item logout-btn" onClick={handleLogout}>
+              <button
+                className="dropdown-item logout-btn"
+                onClick={handleLogout}
+              >
                 Log out
               </button>
             </div>
@@ -436,7 +485,10 @@ export default function HospitalPatientDetail() {
 
       <div className="patient-detail-container">
         {/* Back Button */}
-        <button onClick={() => navigate(-1)} className="patient-detail-back-btn">
+        <button
+          onClick={() => navigate(-1)}
+          className="patient-detail-back-btn"
+        >
           ← Back
         </button>
 
@@ -446,17 +498,20 @@ export default function HospitalPatientDetail() {
           <div className="patient-vitals-grid">
             <div className="patient-vital-item">
               <p>
-                <strong>Latest Height:</strong> {height ? `${height} cm` : 'Not recorded'}
+                <strong>Latest Height:</strong>{" "}
+                {height ? `${height} cm` : "Not recorded"}
               </p>
             </div>
             <div className="patient-vital-item">
               <p>
-                <strong>Latest Weight:</strong> {weight ? `${weight} kg` : 'Not recorded'}
+                <strong>Latest Weight:</strong>{" "}
+                {weight ? `${weight} kg` : "Not recorded"}
               </p>
             </div>
             <div className="patient-vital-item">
               <p>
-                <strong>Blood Type:</strong> {patient.blood_type || 'Not recorded'}
+                <strong>Blood Type:</strong>{" "}
+                {patient.blood_type || "Not recorded"}
               </p>
             </div>
           </div>
@@ -464,87 +519,108 @@ export default function HospitalPatientDetail() {
 
         {/* Medical History */}
         <div className="medical-history-section">
-            <div className="medical-history-header"><h3 className="medical-history-title">Medical History</h3>
-                {(staffData?.role === 2 || staffData?.role === 3) && (
-                  <button className="insert-record" onClick={openNewRecordModal}>New Record</button>
-                )}
-            </div>
+          <div className="medical-history-header">
+            <h3 className="medical-history-title">Medical History</h3>
+            {(staffData?.role === 2 || staffData?.role === 3) && (
+              <button className="insert-record" onClick={openNewRecordModal}>
+                New Record
+              </button>
+            )}
+          </div>
           {/* Scrollable container for medical history */}
           <div className="medical-history-container">
             {patientHistory.length > 0 ? (
               <div className="medical-history-list">
                 {patientHistory.map((record, index) => {
                   // Check if current staff can edit this record (role=3 and same hospital)
-                  const canEdit = staffData?.role === 3 && 
-                                staffData?.hospital_id === record.hospital_id;
-                  
+                  const canEdit =
+                    staffData?.role === 3 &&
+                    staffData?.hospital_id === record.hospital_id;
+
                   return (
-                    <div key={record.id || index} className="medical-record-card">
+                    <div
+                      key={record.id || index}
+                      className="medical-record-card"
+                    >
                       <div className="medical-record-content">
                         {/* Column 1: Main Info */}
                         <div className="medical-record-col1">
                           <p className="medical-record-transaction">
-                            {record.transaction || 'Medical Record'}
+                            {record.transaction || "Medical Record"}
                           </p>
                           <p className="medical-record-field">
-                            <strong>Medication/s:</strong> {record.medication || 'N/A'}
+                            <strong>Medication/s:</strong>{" "}
+                            {record.medication || "N/A"}
                           </p>
                           <p className="medical-record-field">
-                            <strong>Notes:</strong> {record.notes || 'N/A'}
+                            <strong>Notes:</strong> {record.notes || "N/A"}
                           </p>
                           <p className="medical-record-field">
-                            <strong>Assessment:</strong> {record.assessment || 'N/A'}
+                            <strong>Assessment:</strong>{" "}
+                            {record.assessment || "N/A"}
                           </p>
                         </div>
-                        
+
                         {/* Column 2: Vitals & Habits */}
                         <div className="medical-record-col2">
                           <p className="medical-record-field">
-                            <strong>Blood Pressure:</strong> {record.blood_pressure || 'N/A'}
+                            <strong>Blood Pressure:</strong>{" "}
+                            {record.blood_pressure || "N/A"}
                           </p>
                           <p className="medical-record-field">
-                            <strong>Drinking:</strong> {
-                              record.drinking === true ? 'Yes' : 
-                              record.drinking === false ? 'No' : 
-                              record.drinking === null || record.drinking === undefined ? 'N/A' :
-                              record.drinking
-                            }
+                            <strong>Drinking:</strong>{" "}
+                            {record.drinking === true
+                              ? "Yes"
+                              : record.drinking === false
+                              ? "No"
+                              : record.drinking === null ||
+                                record.drinking === undefined
+                              ? "N/A"
+                              : record.drinking}
                           </p>
                           <p className="medical-record-field">
-                            <strong>Smoking:</strong> {
-                              record.smoking === true ? 'Yes' : 
-                              record.smoking === false ? 'No' : 
-                              record.smoking === null || record.smoking === undefined ? 'N/A' :
-                              record.smoking
-                            }
+                            <strong>Smoking:</strong>{" "}
+                            {record.smoking === true
+                              ? "Yes"
+                              : record.smoking === false
+                              ? "No"
+                              : record.smoking === null ||
+                                record.smoking === undefined
+                              ? "N/A"
+                              : record.smoking}
                           </p>
                         </div>
-                        
+
                         {/* Column 3: Meta & Actions */}
                         <div className="medical-record-col3">
                           <div className="medical-record-meta">
                             <p className="medical-record-hospital">
-                              {hospitals[record.hospital_id] || 'Unknown Hospital'}
+                              {hospitals[record.hospital_id] ||
+                                "Unknown Hospital"}
                             </p>
                             <p className="medical-record-date">
-                              {record.created_at ? new Date(record.created_at).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                              }) : 'Unknown date'}
+                              {record.created_at
+                                ? new Date(
+                                    record.created_at
+                                  ).toLocaleDateString("en-US", {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                  })
+                                : "Unknown date"}
                             </p>
                           </div>
                           {canEdit && (
                             <div className="medical-record-actions">
-                              <button 
-                                className="medical-record-btn update" 
+                              <button
+                                className="medical-record-btn update"
                                 title="Edit Record"
                                 onClick={() => openUpdateModal(record)}
                               >
                                 ✎
                               </button>
-                              <button 
-                                className="medical-record-btn delete" 
+                              <button
+                                className="medical-record-btn delete"
                                 title="Delete Record"
                                 onClick={() => openDeleteModal(record)}
                               >
@@ -571,9 +647,11 @@ export default function HospitalPatientDetail() {
       {showNewRecordModal && (
         <div className="hr-modal-overlay">
           <div className="hr-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="hr-modal-close" onClick={closeNewRecordModal}>×</button>
+            <button className="hr-modal-close" onClick={closeNewRecordModal}>
+              ×
+            </button>
             <h2>New Medical Record</h2>
-            
+
             <form onSubmit={handleCreateRecord}>
               <div className="form-group">
                 <label>Patient Name</label>
@@ -590,7 +668,9 @@ export default function HospitalPatientDetail() {
                 <input
                   type="text"
                   value={newRecordForm.transaction}
-                  onChange={(e) => handleFormChange('transaction', e.target.value)}
+                  onChange={(e) =>
+                    handleFormChange("transaction", e.target.value)
+                  }
                   required
                   className="form-input"
                   placeholder="Enter transaction/procedure name"
@@ -603,7 +683,9 @@ export default function HospitalPatientDetail() {
                   <input
                     type="text"
                     value={newRecordForm.blood_pressure}
-                    onChange={(e) => handleFormChange('blood_pressure', e.target.value)}
+                    onChange={(e) =>
+                      handleFormChange("blood_pressure", e.target.value)
+                    }
                     className="form-input"
                     placeholder="120/80"
                   />
@@ -613,7 +695,9 @@ export default function HospitalPatientDetail() {
                   <input
                     type="text"
                     value={newRecordForm.medication}
-                    onChange={(e) => handleFormChange('medication', e.target.value)}
+                    onChange={(e) =>
+                      handleFormChange("medication", e.target.value)
+                    }
                     className="form-input"
                     placeholder="Prescribed medications"
                   />
@@ -626,7 +710,7 @@ export default function HospitalPatientDetail() {
                   <input
                     type="text"
                     value={newRecordForm.height}
-                    onChange={(e) => handleFormChange('height', e.target.value)}
+                    onChange={(e) => handleFormChange("height", e.target.value)}
                     className="form-input"
                     placeholder="e.g., 170 cm"
                   />
@@ -636,7 +720,7 @@ export default function HospitalPatientDetail() {
                   <input
                     type="text"
                     value={newRecordForm.weight}
-                    onChange={(e) => handleFormChange('weight', e.target.value)}
+                    onChange={(e) => handleFormChange("weight", e.target.value)}
                     className="form-input"
                     placeholder="e.g., 70 kg"
                   />
@@ -656,7 +740,7 @@ export default function HospitalPatientDetail() {
                   />
                   {showDoctorDropdown && filteredDoctors.length > 0 && (
                     <div className="doctor-dropdown">
-                      {filteredDoctors.slice(0, 5).map(doctor => (
+                      {filteredDoctors.slice(0, 5).map((doctor) => (
                         <div
                           key={doctor.id}
                           className="doctor-option"
@@ -675,7 +759,9 @@ export default function HospitalPatientDetail() {
                   <label>Drinking</label>
                   <select
                     value={newRecordForm.drinking}
-                    onChange={(e) => handleFormChange('drinking', e.target.value)}
+                    onChange={(e) =>
+                      handleFormChange("drinking", e.target.value)
+                    }
                     className="form-input"
                   >
                     <option value="">Select...</option>
@@ -687,7 +773,9 @@ export default function HospitalPatientDetail() {
                   <label>Smoking</label>
                   <select
                     value={newRecordForm.smoking}
-                    onChange={(e) => handleFormChange('smoking', e.target.value)}
+                    onChange={(e) =>
+                      handleFormChange("smoking", e.target.value)
+                    }
                     className="form-input"
                   >
                     <option value="">Select...</option>
@@ -701,7 +789,9 @@ export default function HospitalPatientDetail() {
                 <label>Assessment</label>
                 <textarea
                   value={newRecordForm.assessment}
-                  onChange={(e) => handleFormChange('assessment', e.target.value)}
+                  onChange={(e) =>
+                    handleFormChange("assessment", e.target.value)
+                  }
                   rows={3}
                   className="form-input"
                   placeholder="Medical assessment and findings"
@@ -712,7 +802,7 @@ export default function HospitalPatientDetail() {
                 <label>Notes</label>
                 <textarea
                   value={newRecordForm.notes}
-                  onChange={(e) => handleFormChange('notes', e.target.value)}
+                  onChange={(e) => handleFormChange("notes", e.target.value)}
                   rows={3}
                   className="form-input"
                   placeholder="Additional notes and observations"
@@ -733,7 +823,7 @@ export default function HospitalPatientDetail() {
                   className="btn-submit"
                   disabled={submitting}
                 >
-                  {submitting ? 'Creating...' : 'Create Record'}
+                  {submitting ? "Creating..." : "Create Record"}
                 </button>
               </div>
             </form>
@@ -745,9 +835,11 @@ export default function HospitalPatientDetail() {
       {showUpdateModal && selectedRecord && (
         <div className="hr-modal-overlay">
           <div className="hr-modal">
-            <button className="hr-modal-close" onClick={closeUpdateModal}>×</button>
+            <button className="hr-modal-close" onClick={closeUpdateModal}>
+              ×
+            </button>
             <h2>Update Medical Record</h2>
-            
+
             <form onSubmit={handleUpdateRecord}>
               <div className="form-group">
                 <label>Patient Name</label>
@@ -764,7 +856,9 @@ export default function HospitalPatientDetail() {
                 <input
                   type="text"
                   value={updateForm.transaction}
-                  onChange={(e) => handleUpdateForm('transaction', e.target.value)}
+                  onChange={(e) =>
+                    handleUpdateForm("transaction", e.target.value)
+                  }
                   required
                   className="form-input"
                   placeholder="Enter transaction/procedure name"
@@ -777,7 +871,9 @@ export default function HospitalPatientDetail() {
                   <input
                     type="text"
                     value={updateForm.blood_pressure}
-                    onChange={(e) => handleUpdateForm('blood_pressure', e.target.value)}
+                    onChange={(e) =>
+                      handleUpdateForm("blood_pressure", e.target.value)
+                    }
                     className="form-input"
                     placeholder="120/80"
                   />
@@ -787,7 +883,9 @@ export default function HospitalPatientDetail() {
                   <input
                     type="text"
                     value={updateForm.medication}
-                    onChange={(e) => handleUpdateForm('medication', e.target.value)}
+                    onChange={(e) =>
+                      handleUpdateForm("medication", e.target.value)
+                    }
                     className="form-input"
                     placeholder="Prescribed medications"
                   />
@@ -800,7 +898,7 @@ export default function HospitalPatientDetail() {
                   <input
                     type="text"
                     value={updateForm.height}
-                    onChange={(e) => handleUpdateForm('height', e.target.value)}
+                    onChange={(e) => handleUpdateForm("height", e.target.value)}
                     className="form-input"
                     placeholder="e.g., 170 cm"
                   />
@@ -810,7 +908,7 @@ export default function HospitalPatientDetail() {
                   <input
                     type="text"
                     value={updateForm.weight}
-                    onChange={(e) => handleUpdateForm('weight', e.target.value)}
+                    onChange={(e) => handleUpdateForm("weight", e.target.value)}
                     className="form-input"
                     placeholder="e.g., 70 kg"
                   />
@@ -822,7 +920,9 @@ export default function HospitalPatientDetail() {
                   <label>Drinking</label>
                   <select
                     value={updateForm.drinking}
-                    onChange={(e) => handleUpdateForm('drinking', e.target.value)}
+                    onChange={(e) =>
+                      handleUpdateForm("drinking", e.target.value)
+                    }
                     className="form-input"
                   >
                     <option value="">Select...</option>
@@ -834,7 +934,9 @@ export default function HospitalPatientDetail() {
                   <label>Smoking</label>
                   <select
                     value={updateForm.smoking}
-                    onChange={(e) => handleUpdateForm('smoking', e.target.value)}
+                    onChange={(e) =>
+                      handleUpdateForm("smoking", e.target.value)
+                    }
                     className="form-input"
                   >
                     <option value="">Select...</option>
@@ -848,7 +950,9 @@ export default function HospitalPatientDetail() {
                 <label>Assessment</label>
                 <textarea
                   value={updateForm.assessment}
-                  onChange={(e) => handleUpdateForm('assessment', e.target.value)}
+                  onChange={(e) =>
+                    handleUpdateForm("assessment", e.target.value)
+                  }
                   rows={3}
                   className="form-input"
                   placeholder="Medical assessment and findings"
@@ -859,7 +963,7 @@ export default function HospitalPatientDetail() {
                 <label>Notes</label>
                 <textarea
                   value={updateForm.notes}
-                  onChange={(e) => handleUpdateForm('notes', e.target.value)}
+                  onChange={(e) => handleUpdateForm("notes", e.target.value)}
                   rows={3}
                   className="form-input"
                   placeholder="Additional notes and observations"
@@ -880,7 +984,7 @@ export default function HospitalPatientDetail() {
                   className="btn-submit"
                   disabled={submitting}
                 >
-                  {submitting ? 'Updating...' : 'Update Record'}
+                  {submitting ? "Updating..." : "Update Record"}
                 </button>
               </div>
             </form>
@@ -891,12 +995,17 @@ export default function HospitalPatientDetail() {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && selectedRecord && (
         <div className="hr-modal-overlay">
-          <div className="hr-modal" style={{maxWidth: '400px'}}>
-            <button className="hr-modal-close" onClick={closeDeleteModal}>×</button>
+          <div className="hr-modal" style={{ maxWidth: "400px" }}>
+            <button className="hr-modal-close" onClick={closeDeleteModal}>
+              ×
+            </button>
             <h2>Delete Record</h2>
             <p>Are you sure you want to delete this medical record?</p>
-            <p><strong>Transaction:</strong> {selectedRecord.transaction || 'Medical Record'}</p>
-            
+            <p>
+              <strong>Transaction:</strong>{" "}
+              {selectedRecord.transaction || "Medical Record"}
+            </p>
+
             <div className="form-actions">
               <button
                 type="button"
@@ -910,10 +1019,10 @@ export default function HospitalPatientDetail() {
                 type="button"
                 onClick={handleDeleteRecord}
                 className="btn-submit"
-                style={{background: '#dc2626'}}
+                style={{ background: "#dc2626" }}
                 disabled={submitting}
               >
-                {submitting ? 'Deleting...' : 'Delete'}
+                {submitting ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>
