@@ -17,9 +17,9 @@
 
 ## 🔗 Quick Links
 
-- **[📂 Repository Link](Medivault)**
-- **[🌐 Live Website Hospital Admin](https://medivault-hospital-v2.vercel.app/)**
-- **[🌐 Live Website Patient](https://medivault-kappa.vercel.app/)**
+- **[📂 Repository Link](https://github.com/kebinmirabel/medivault)**
+- **[🩺 Live Website Hospital Admin](https://medivault-hospital-v2.vercel.app/)**
+- **[👤 Live Website Patient](https://medivault-kappa.vercel.app/)**
 ---
 
 ## 📖 Project Overview
