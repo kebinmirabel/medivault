@@ -83,6 +83,19 @@ MediVault leverages a modern tech stack to ensure scalability, security, and per
 
 ---
 
+## 🧪 Test Credentials
+
+You can use the following credentials to explore the system's different roles.
+
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| **🏥 Hospital Admin** | `ventozaantony@gmail.com` | `Password_123` |
+| **👤 Patient** | `zrs2uaz0f@relay.firefox.com` | `Password@123` |
+
+> **Note:** These accounts are for demonstration purposes only. Do not store real sensitive medical data during testing.
+
+---
+
 ## 🚀 Getting Started
 
 *(Instructions on how to clone and run the project locally)*
