@@ -37,29 +37,84 @@ body {
   right: 0;
   top: 0;
   z-index: 50;
+  box-sizing: border-box;
+  width: 100%;
 }
 .topbar-left {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 1;
+  min-width: 0;
 }
 .brand {
   font-weight: 800;
   font-size: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .topbar-right {
-  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  min-width: fit-content;
+  max-width: none;
+  background: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  max-width: none;
+  background: none;
+  border: none;
+}
+
+.nav-btn {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: background-color 0.2s ease;
+}
+
+.nav-btn::before,
+.nav-btn::after {
+  display: none;
+  content: none;
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .user-dropdown {
   position: relative;
+  flex-shrink: 0;
+  background: none;
+  border-radius: 0;
 }
 
 .user-avatar {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -69,10 +124,11 @@ body {
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.2s ease;
+  flex-shrink: 0;
 }
 
 .user-avatar:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.35);
 }
 
 .dropdown-menu {
@@ -316,4 +372,40 @@ body {
 
 @media (min-width: 800px) {
   /* keep stacked layout - cards are vertically stacked to match design */
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 600px) {
+  .topbar {
+    padding: 0 12px;
+  }
+
+  .nav-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .brand {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-btn {
+    display: none;
+  }
+
+  .topbar {
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 400px) {
+  .topbar {
+    padding: 0 8px;
+  }
+
+  .topbar-right {
+    gap: 8px;
+  }
 }

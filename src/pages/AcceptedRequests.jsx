@@ -61,8 +61,38 @@ export default function AcceptedRequests() {
 
       console.log("Raw accepted requests data:", data);
 
+      // Remove duplicates - keep only one request per hospital
+      const uniqueByHospital = [];
+      const seenHospitals = new Set();
+
+      (data || []).forEach((item) => {
+        const hospitalId = item.hospital_id;
+        console.log(
+          "Processing item:",
+          item.id,
+          "hospital_id:",
+          hospitalId,
+          "hospital_name:",
+          item.hospital_tbl?.name
+        );
+        if (!seenHospitals.has(hospitalId)) {
+          seenHospitals.add(hospitalId);
+          uniqueByHospital.push(item);
+          console.log("Added to unique list");
+        } else {
+          console.log("Duplicate hospital - skipped");
+        }
+      });
+
+      console.log(
+        "Unique requests:",
+        uniqueByHospital.length,
+        "out of",
+        data?.length || 0
+      );
+
       // Transform the data to match the card display format
-      const transformed = (data || []).map((item) => ({
+      const transformed = uniqueByHospital.map((item) => ({
         id: item.id,
         patientName: item.patient
           ? `${item.patient.first_name} ${item.patient.last_name}`

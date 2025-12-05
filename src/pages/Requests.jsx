@@ -67,8 +67,20 @@ export default function Requests() {
       // Debug: log raw data to check hospital reference
       console.log("Raw OTP data:", data);
 
+      // Remove duplicates - keep only one request per hospital
+      const uniqueByHospital = [];
+      const seenHospitals = new Set();
+
+      (data || []).forEach((item) => {
+        const hospitalId = item.hospital_id;
+        if (!seenHospitals.has(hospitalId)) {
+          seenHospitals.add(hospitalId);
+          uniqueByHospital.push(item);
+        }
+      });
+
       // Transform the data to match the card display format
-      const transformed = (data || []).map((item) => ({
+      const transformed = uniqueByHospital.map((item) => ({
         id: item.id,
         name: item.patient
           ? `${item.patient.first_name} ${item.patient.last_name}`
@@ -117,6 +129,14 @@ export default function Requests() {
     setDropdownOpen((prev) => !prev);
   };
 
+  const goToMedicalHistory = () => {
+    navigate("/medical-history");
+  };
+
+  const goToAcceptedRequests = () => {
+    navigate("/patient-accepted-requests");
+  };
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -136,6 +156,20 @@ export default function Requests() {
           <div className="brand">MediVault</div>
         </div>
         <div className="topbar-right">
+          <button
+            type="button"
+            className="nav-btn"
+            onClick={goToMedicalHistory}
+          >
+            Medical History
+          </button>
+          <button
+            type="button"
+            className="nav-btn"
+            onClick={goToAcceptedRequests}
+          >
+            Accepted Requests
+          </button>
           <div className="user-dropdown">
             <button
               className="user-avatar"

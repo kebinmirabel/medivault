@@ -98,6 +98,24 @@ export async function requestPatientData({ hospital_id, patient_id, healthcare_s
 		console.log('Authenticated user ID:', user.id);
 		console.log('healthcare_staff_id in payload:', healthcare_staff_id);
 
+		// Check if a request already exists for this patient from this hospital
+		const { data: existingRequest, error: checkError } = await supabase
+			.from('otp')
+			.select('id')
+			.eq('patient_id', patient_id)
+			.eq('hospital_id', hospital_id)
+			.limit(1);
+
+		if (checkError) {
+			console.error('Error checking for existing request:', checkError);
+			return { data: null, error: new Error(`Failed to check existing requests: ${checkError.message}`) };
+		}
+
+		if (existingRequest && existingRequest.length > 0) {
+			console.log('Request already exists for this patient from this hospital');
+			return { data: null, error: new Error('A request for this patient already exists from your hospital') };
+		}
+
 		// Get the current session to check JWT
 		const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 		console.log('Current session:', session ? 'exists' : 'null', sessionError);

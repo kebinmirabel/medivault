@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import "../css/MedicalHistory.css";
+import "../css/Requests.css";
 import { supabase } from "../lib/supabaseClient";
 
-export default function MedicalHistory() {
+export default function PatientAcceptedRequests() {
   const navigate = useNavigate();
   const [openId, setOpenId] = useState(null);
-  const [records, setRecords] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
-    validateUserAndFetchRecords();
+    fetchUserAndRequests();
   }, []);
 
-  const validateUserAndFetchRecords = async () => {
+  const fetchUserAndRequests = async () => {
     // Check if user is logged in
     const { data: authData } = await supabase.auth.getUser();
     if (!authData.user) {
@@ -24,7 +24,7 @@ export default function MedicalHistory() {
       return;
     }
 
-    // Validate user is a patient
+    // Fetch user details from patient_tbl to validate user type
     const { data: userData, error: userError } = await supabase
       .from("patient_tbl")
       .select("first_name, last_name, email")
@@ -33,6 +33,7 @@ export default function MedicalHistory() {
 
     if (userError || !userData) {
       // User is not a patient - sign out and redirect
+      console.error("User is not a valid patient:", userError);
       await supabase.auth.signOut();
       navigate("/");
       return;
@@ -40,29 +41,34 @@ export default function MedicalHistory() {
 
     setUser(userData);
 
-    // User is validated, fetch medical records
-    fetchMedicalRecords();
+    // Fetch accepted requests
+    fetchAcceptedRequests();
   };
 
-  const fetchMedicalRecords = async () => {
+  const fetchAcceptedRequests = async () => {
     try {
       setLoading(true);
       setError(null);
 
+      // Get current user ID
+      const { data: authData } = await supabase.auth.getUser();
+
       const { data, error: fetchError } = await supabase
-        .from("patient_records_tbl")
+        .from("accepted_requests")
         .select(
           `
           *,
           patient:patient_id (first_name, last_name),
-          hospital_tbl:hospital_id (name)
+          healthcare_staff:healthcare_staff_id (first_name, last_name),
+          hospital:hospital_id (name)
         `
         )
+        .eq("patient_id", authData.user.id)
         .order("created_at", { ascending: false });
 
       if (fetchError) throw fetchError;
 
-      console.log("Raw medical records data:", data);
+      console.log("Raw accepted requests data:", data);
 
       // Transform the data to match the card display format
       const transformed = (data || []).map((item) => ({
@@ -70,7 +76,10 @@ export default function MedicalHistory() {
         patientName: item.patient
           ? `${item.patient.first_name} ${item.patient.last_name}`
           : "Unknown Patient",
-        hospitalName: item.hospital_tbl?.name || "Unknown Hospital",
+        staffName: item.healthcare_staff
+          ? `${item.healthcare_staff.first_name} ${item.healthcare_staff.last_name}`
+          : "Unknown Staff",
+        hospitalName: item.hospital?.name || "Unknown Hospital",
         time: new Date(item.created_at).toLocaleString("en-US", {
           year: "numeric",
           month: "2-digit",
@@ -78,22 +87,11 @@ export default function MedicalHistory() {
           hour: "2-digit",
           minute: "2-digit",
         }),
-        // Medical details
-        bloodPressure: item.blood_pressure || "N/A",
-        height: item.height ? `${item.height} cm` : "N/A",
-        weight: item.weight ? `${item.weight} kg` : "N/A",
-        assessment: item.assessment || "N/A",
-        medication: item.medication || "N/A",
-        notes: item.notes || "N/A",
-        smoking: item.smoking !== null ? (item.smoking ? "Yes" : "No") : "N/A",
-        drinking:
-          item.drinking !== null ? (item.drinking ? "Yes" : "No") : "N/A",
-        transaction: item.transaction || "N/A",
       }));
 
-      setRecords(transformed);
+      setRequests(transformed);
     } catch (err) {
-      console.error("Error fetching medical records:", err);
+      console.error("Error fetching accepted requests:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -115,8 +113,8 @@ export default function MedicalHistory() {
     navigate("/requests");
   };
 
-  const goToAcceptedRequests = () => {
-    navigate("/patient-accepted-requests");
+  const goToMedicalHistory = () => {
+    navigate("/medical-history");
   };
 
   // Close dropdown when clicking outside
@@ -144,9 +142,9 @@ export default function MedicalHistory() {
           <button
             type="button"
             className="nav-btn"
-            onClick={goToAcceptedRequests}
+            onClick={goToMedicalHistory}
           >
-            Accepted Requests
+            Medical History
           </button>
           <div className="user-dropdown">
             <button
@@ -218,95 +216,87 @@ export default function MedicalHistory() {
 
       <div className="shell-body">
         <main className="content">
-          <header className="medical-history-header">
-            <h2>Medical History</h2>
+          <header className="requests-header">
+            <h2>Accepted Requests</h2>
           </header>
 
-          <section className="medical-history-panel full-width">
+          <section className="requests-panel full-width">
             {loading && (
-              <div className="medical-history-status">
-                Loading medical records...
+              <div className="requests-status">
+                Loading accepted requests...
               </div>
             )}
 
             {error && (
-              <div className="medical-history-status error">
-                Error loading medical records: {error}
+              <div className="requests-status error">
+                Error loading accepted requests: {error}
               </div>
             )}
 
-            {!loading && !error && records.length === 0 && (
-              <div className="medical-history-status">
-                No medical records found.
-              </div>
+            {!loading && !error && requests.length === 0 && (
+              <div className="requests-status">No accepted requests found.</div>
             )}
 
-            {!loading && !error && records.length > 0 && (
-              <div className="medical-history-list">
-                {records.map((r) => {
+            {!loading && !error && requests.length > 0 && (
+              <div className="requests-list">
+                {requests.map((r) => {
                   const expanded = openId === r.id;
                   return (
                     <article
                       key={r.id}
-                      className={"record-card" + (expanded ? " expanded" : "")}
+                      className={"req-card" + (expanded ? " expanded" : "")}
                       onClick={() => toggle(r.id)}
                       role="button"
                       tabIndex={0}
                       onKeyDown={(e) => e.key === "Enter" && toggle(r.id)}
                     >
-                      <div className="record-head">
-                        <div className="record-patient">{r.transaction}</div>
-                        <div className="record-time">{r.time}</div>
+                      <div className="req-head">
+                        <div className="req-who">{r.patientName}</div>
+                        <div className="req-time">{r.time}</div>
                       </div>
 
-                      <div className="record-body">
-                        <div className="record-body-left">
-                          <div className="record-hospital">
-                            Hospital: {r.hospitalName}
+                      <div className="req-body">
+                        <div className="req-body-left">
+                          <div className="req-note">
+                            Access granted to {r.hospitalName}
                           </div>
-                          <div className="record-vitals">
-                            BP: {r.bloodPressure} | Height: {r.height} | Weight:{" "}
-                            {r.weight}
-                          </div>
+                          {r.staffName && r.staffName !== "Unknown Staff" && (
+                            <div className="req-staff">
+                              Staff: {r.staffName}
+                            </div>
+                          )}
                         </div>
-                        <div className="record-expand">
+                        <div className="req-expand">
                           {expanded ? "Click to collapse" : "Click to expand"}
                         </div>
                       </div>
 
                       <div
-                        className={"record-details" + (expanded ? " show" : "")}
+                        className={"req-details" + (expanded ? " show" : "")}
                         aria-hidden={!expanded}
                       >
-                        <div className="record-info-grid">
-                          <div className="record-info-item">
-                            <div className="record-info-label">Assessment</div>
-                            <div className="record-info-value">
-                              {r.assessment}
+                        <div className="req-otp-label">Request Details</div>
+                        <div className="req-info-grid">
+                          <div className="req-info-item">
+                            <div className="req-info-label">
+                              <strong>Hospital</strong>
+                            </div>
+                            <div className="req-info-value">
+                              {r.hospitalName}
                             </div>
                           </div>
-                          <div className="record-info-item">
-                            <div className="record-info-label">Medication</div>
-                            <div className="record-info-value">
-                              {r.medication}
+                          <div className="req-info-item">
+                            <div className="req-info-label">
+                              <strong>Healthcare Staff</strong>
                             </div>
+                            <div className="req-info-value">{r.staffName}</div>
                           </div>
-                          <div className="record-info-item">
-                            <div className="record-info-label">Smoking</div>
-                            <div className="record-info-value">{r.smoking}</div>
-                          </div>
-                          <div className="record-info-item">
-                            <div className="record-info-label">Drinking</div>
-                            <div className="record-info-value">
-                              {r.drinking}
+                          <div className="req-info-item">
+                            <div className="req-info-label">
+                              <strong>Approved On</strong>
                             </div>
+                            <div className="req-info-value">{r.time}</div>
                           </div>
-                          {r.notes !== "N/A" && (
-                            <div className="record-info-item full-width">
-                              <div className="record-info-label">Notes</div>
-                              <div className="record-info-value">{r.notes}</div>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </article>
