@@ -18,8 +18,8 @@
 ## 🔗 Quick Links
 
 - **[📂 Repository Link](Medivault)**
-- **[🌐 Live Website]()** *(Link Pending)*
-
+- **[🌐 Live Website Hospital Admin](https://medivault-hospital-v2.vercel.app/)**
+- **[🌐 Live Website Patient](https://medivault-kappa.vercel.app/)**
 ---
 
 ## 📖 Project Overview
